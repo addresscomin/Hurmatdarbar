@@ -18,7 +18,7 @@ const statusNames = {
 const tabs = [["home","⌂","Dashboard"],["orders","▤","Orders"],["tracking","⌖","Live"],["riders","♧","Riders"],["profile","♙","Profile"],["menu","▦","Menu"],["inventory","▣","Inventory"],["availability","✓","Delivery checks"],["payments","₹","Payments"],["refunds","↩","Refunds"],["reservations","◷","Bookings"],["reports","▥","Reports"],["settings","⚙","Store setup"],["alerts","♢","Alerts"]];
 // Temporary development-only UI preview. Live data and all write operations remain protected.
 const DEVELOPMENT_PREVIEW = false;
-let user=null, role=null, page="home", orders=[], menuItems=[], menuCategories=[], reservations=[], riders=[], riderLocations=[], notifications=[], availabilityRequests=[], cashCollections=[], availabilityLoadError="", menuLoadError="", payments=[], refunds=[], settings=null, channel=null, busy=false, availabilityRefreshTimer=null;
+let user=null, role=null, page="home", orders=[], menuItems=[], menuCategories=[], reservations=[], riders=[], riderLocations=[], notifications=[], availabilityRequests=[], cashCollections=[], availabilityLoadError="", menuLoadError="", payments=[], refunds=[], settings=null, channel=null, busy=false, availabilityRefreshTimer=null, ownerPushReady=false;
 
 function toast(message, bad=false){
   let el=document.getElementById("admin-toast");
@@ -94,7 +94,7 @@ function header(){
   const moreTabs=tabs.filter(t=>!["home","orders","tracking","riders","profile"].includes(t[0]));
   const status=DEVELOPMENT_PREVIEW?'<span class="pill">PREVIEW MODE</span>':'<span class="pill owner-role-pill">'+esc(role||"STAFF").toUpperCase()+'</span>';
   return '<header class="partner-topbar"><div class="topbar-brand"><div class="logo"><img src="../assets/hurmat-logo-repo.png" alt="Hurmat Darbar"></div><div><b>HURMAT OWNER</b><small>'+(DEVELOPMENT_PREVIEW?'DEVELOPMENT WORKSPACE':'LIVE RESTAURANT OPERATIONS')+'</small></div></div><div class="owner-header-actions">'+status+
-  '<button class="header-icon notification-trigger" id="owner-notifications" aria-label="Notifications"><span>♧</span>'+(unread?'<i>'+Math.min(unread,99)+'</i>':'')+'</button>'+
+  '<button class="header-icon notification-trigger" id="owner-notifications" aria-label="Notifications"><span><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></span>'+(unread?'<i>'+Math.min(unread,99)+'</i>':'')+'</button>'+
   '<button class="header-icon menu-trigger" id="owner-menu" aria-label="More options" aria-expanded="false"><span>☰</span></button>'+
   '<div class="owner-more-menu" id="owner-more-menu" hidden>'+'<div class="menu-panel-head"><b>QUICK CONTROLS</b><small>'+esc(role||"STAFF").toUpperCase()+' ACCESS</small></div>'+(DEVELOPMENT_PREVIEW?"":'<button class="menu-control" id="outlet-toggle" data-open="'+String(open)+'"><span class="menu-item-icon">◉</span><span class="menu-item-label">Store status</span><strong>'+(open?"Accepting orders":"Paused")+'</strong></button>')+'<div class="menu-divider"></div>'+moreTabs.map(t=>'<button data-tab="'+t[0]+'" class="'+(page===t[0]?"on":"")+'"><span class="menu-item-icon">'+t[1]+'</span><span class="menu-item-label">'+t[2]+'</span><span class="menu-item-arrow">›</span></button>').join("")+(DEVELOPMENT_PREVIEW?"":'<div class="menu-divider"></div><button id="signout" class="menu-signout"><span class="menu-item-icon">↪</span><span class="menu-item-label">Sign out</span></button>')+'</div></div></header>';
 }
@@ -231,7 +231,7 @@ function paymentsView(){
   return '<section class="partner-panel"><div class="panel-heading"><div><h2>UPI payment verification</h2><p>Check the customer UTR/reference and payment screenshot before confirming the order.</p></div><span class="pill">'+pending.length+' awaiting review</span></div>'+
     (payments.map(p=>'<article class="card" style="margin:12px 0"><div class="row"><b>Order #'+esc(p.orders?.order_no||"—")+'</b><span class="tag '+(p.status==="approved"?"s-served":p.status==="rejected"?"s-cancelled":"s-new")+'">'+esc(p.status)+'</span></div>'+
     '<p class="mute">'+esc(p.orders?.customer_name||"Customer")+' · '+esc(p.orders?.customer_phone||"")+'</p><p><b>Amount: '+money(p.orders?.total||0)+'</b></p><p class="mute">UPI reference: <b>'+esc(p.upi_reference)+'</b></p>'+
-    (p.screenshot_url?'<a href="'+esc(p.screenshot_url)+'" target="_blank" rel="noopener" class="btn ghost sm">View payment screenshot ↗</a>':'<small>Screenshot link unavailable. Refresh to request a new secure link.</small>')+
+    (p.screenshot_url?'<button type="button" class="btn ghost sm" data-view-receipt="'+esc(p.id)+'">View payment receipt</button>':'<small>Receipt unavailable. Refresh to request a new secure link.</small>')+
     (p.status==="pending"?'<div class="actions"><button class="btn sm" data-payment-review="'+esc(p.id)+'" data-decision="approved">Verify & confirm order</button><button class="btn ghost sm" data-payment-review="'+esc(p.id)+'" data-decision="rejected">Reject proof</button></div>':'<p class="mute">Review note: '+esc(p.review_note||"—")+'</p>')+
     '</article>').join("")||empty("No UPI payment submissions yet."))+'</section>';
 }
