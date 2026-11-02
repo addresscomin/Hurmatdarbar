@@ -35,9 +35,9 @@
     </div>
   </section>
   <section class="customer-tools" id="my-account">
-    <div class="section-head"><div><p class="eyebrow">YOUR PERSONAL SPACE</p><h2>Welcome to <span>Hurmat Darbar.</span></h2><p class="menu-intro">Create your account or log in first. The menu and ordering become available only after you sign in.</p></div></div>
+    <div class="section-head"><div><p class="eyebrow">YOUR PERSONAL SPACE</p><h2>Welcome to <span>Hurmat Darbar.</span></h2><p class="menu-intro">Browse instantly as a guest. Your guest ID keeps your profile and order history separate on this browser.</p></div></div>
     <div class="service-grid">
-      <form class="service-card" id="customer-auth-form">
+      <form class="service-card" id="customer-auth-form" hidden aria-hidden="true">
         <div class="service-kicker">CUSTOMER ACCOUNT</div><h3 id="customer-auth-title">Create your account</h3>
         <p id="customer-auth-help">Enter your email address and create a password to unlock the menu and ordering.</p>
         <label for="account-name">Full name</label><input id="account-name" autocomplete="name" maxlength="80" placeholder="Your full name">
@@ -47,10 +47,10 @@
         <button class="btn primary" id="customer-auth-submit" type="submit">Create account</button><button class="auth-forgot-link" id="customer-forgot-password" type="button">Forgot password?</button>
         <button class="btn ghost" id="customer-auth-switch" type="button">Already have an account? Log in</button>
         
-        <small id="customer-auth-message" role="status">Your account keeps your own order history private.</small>
+        <small id="customer-auth-message" role="status">Your guest identity keeps your order history separate.</small>
       </form>
       <div class="service-card" id="customer-profile-card">
-        <div class="service-kicker">PROFILE & SUPPORT</div><h3>Your profile</h3><p id="customer-profile-summary">Sign in to view and update your customer details.</p>
+        <div class="service-kicker">PROFILE & SUPPORT</div><h3>Your profile</h3><p id="customer-profile-summary">Your guest profile, orders and details are linked to your private Guest ID.</p>
         <label for="profile-name">Display name</label><input id="profile-name" maxlength="80" placeholder="Your name">
         <label for="profile-phone">Mobile number</label><input id="profile-phone" type="tel" maxlength="20" placeholder="Mobile number">
         <button class="btn primary" id="profile-save" type="button">Save profile</button>
@@ -62,7 +62,7 @@
     </div>
   </section>
   <section class="customer-tools my-orders-section" id="my-orders">
-    <div class="section-head"><div><p class="eyebrow">YOUR HURMAT DARBAR ACCOUNT</p><h2>My <span>Orders.</span></h2><p class="menu-intro">Your order status and payment verification update automatically.</p></div></div>
+    <div class="section-head"><div><p class="eyebrow">YOUR HURMAT DARBAR ACCOUNT</p><h2>My <span>Orders.</span></h2><p class="menu-intro">Your guest order status and payment verification update automatically.</p></div></div>
     <div id="my-orders-list" class="my-orders-list" aria-live="polite"><p class="my-orders-empty">Loading your orders…</p></div>
   </section>
   <section class="customer-tools" id="customer-notifications" hidden><div class="section-head"><div><p class="eyebrow">LIVE ORDER UPDATES</p><h2>Your <span>Notifications.</span></h2><p class="menu-intro">Order, delivery, availability and refund updates in one place.</p></div><div class="notification-controls"><button class="btn ghost" id="enable-customer-alerts" type="button">Enable push notifications</button><button class="btn ghost" id="disable-customer-alerts" type="button" hidden>Disable on this device</button></div></div><div id="customer-notifications-list" class="customer-notifications-list" aria-live="polite"><p class="my-orders-empty">Sign in to view notifications.</p></div><small class="notification-note">Allow notifications in your browser to receive order updates even when the website is closed. You can disable push on this device any time.</small></section>
