@@ -382,7 +382,7 @@ function renderCustomerNotifications(rows){
 async function loadCustomerNotifications(){
   if(!customerNotificationsRoot)return;
   const {data:{user}}=await db.auth.getUser();
-  if(!user||user.is_anonymous){customerNotificationsRoot.replaceChildren(el("p","my-orders-empty","Log in to view notifications."));return;}
+  if(!user){customerNotificationsRoot.replaceChildren(el("p","my-orders-empty","Your guest notifications will appear here."));return;}
   const {data,error}=await db.from("notifications").select("id,title,body,order_id,is_read,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(50);
   if(error){customerNotificationsRoot.replaceChildren(el("p","my-orders-empty","Notifications could not be loaded: "+error.message));return;}
   renderCustomerNotifications(data||[]);
@@ -410,7 +410,7 @@ async function refreshCustomerPushControls(){
 async function enableCustomerAlerts(){
   try{
     const {data:{user}}=await db.auth.getUser();
-    if(!user||user.is_anonymous){customerAuthMessage("Please log in before enabling push notifications.",true);return;}
+    if(!user){customerAuthMessage("Guest identity is not ready. Refresh the page.",true);return;}
     if(!("Notification" in window)||!("PushManager" in window)||!("serviceWorker" in navigator)){
       customerAuthMessage("Push notifications are not supported in this browser. Try Chrome on Android.",true);return;
     }
