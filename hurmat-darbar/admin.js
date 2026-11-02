@@ -205,14 +205,14 @@ function availabilityRequestCard(r){
   const items=(r.items_snapshot||[]).map(i=>esc(i.qty)+" × "+esc(i.item_name)+" ("+esc(i.variant_label)+") · "+money(i.line_total)).join("<br>");
   const distance=r.distance_m==null?"Restaurant map pin not verified":(Number(r.distance_m).toLocaleString("en-IN")+" m · "+(r.within_radius?"inside configured radius":"outside configured radius"));
   const pending=r.status==="pending";
-  const canApprove=pending&&r.within_radius===true;
+  const canApprove=pending&&r.within_radius===true&&ownerPushReady;
   return '<article class="card" style="margin:10px 0"><div class="row"><b>Delivery check · '+esc(r.customer_name)+'</b><span class="tag '+(r.status==="approved"?"s-ready":r.status==="rejected"||r.status==="expired"?"cancelled":"s-new")+'">'+esc(r.status.toUpperCase())+'</span></div>'+
     '<p class="mute" style="margin:8px 0">'+esc(r.customer_phone)+' · '+new Date(r.created_at).toLocaleString()+'</p>'+
     '<p class="mute">'+esc(r.address_text)+'</p><p class="mute">Distance: '+esc(distance)+'</p>'+
     '<p style="margin:10px 0;line-height:1.7">'+(items||"No item details")+'</p>'+
     '<div class="row"><span class="mute">Subtotal '+money(r.subtotal)+' · Delivery '+money(r.delivery_fee)+'</span><b class="price">'+money(r.total)+'</b></div>'+
     (r.notes?'<p class="mute">Note: '+esc(r.notes)+'</p>':'')+
-    (pending?'<div class="actions"><button class="btn sm" data-avail-id="'+esc(r.id)+'" data-avail-decision="approved" '+(canApprove?"":'disabled title="Verify the restaurant pin and delivery radius first"')+'>YES — Available</button><button class="btn sm ghost" data-avail-id="'+esc(r.id)+'" data-avail-decision="rejected">NO — Not available</button></div>':'')+
+    (pending?'<div class="actions"><button class="btn sm" data-avail-id="'+esc(r.id)+'" data-avail-decision="approved" '+(canApprove?"":'disabled title="Enable owner push notifications and verify delivery radius first"')+'>YES — Available</button><button class="btn sm ghost" data-avail-id="'+esc(r.id)+'" data-avail-decision="rejected">NO — Not available</button></div>':'')+
     (r.decision_reason?'<p class="mute">Decision: '+esc(r.decision_reason)+'</p>':'')+
     (r.status==="approved"?'<p class="mute">Customer can now continue to payment. Approval expires '+new Date(r.expires_at).toLocaleString()+'</p>':'')+
     '</article>';
@@ -693,10 +693,11 @@ async function startApp(){
   },8000);
   if(channel)await supabase.removeChannel(channel);
   channel=supabase.channel("hurmat-admin-live")
-    .on("postgres_changes",{event:"*",schema:"public",table:"orders"},()=>refresh())
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"orders"},payload=>{refresh();const o=payload.new||{};ownerBrowserNotify("New order received","Order #"+(o.order_no||"—")+" · "+money(o.total||0));})
+    .on("postgres_changes",{event:"UPDATE",schema:"public",table:"orders"},()=>refresh())
     .on("postgres_changes",{event:"*",schema:"public",table:"payment_submissions"},()=>refresh())
     .on("postgres_changes",{event:"*",schema:"public",table:"refund_requests"},()=>refresh())
-    .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},()=>{refresh();toast("New restaurant notification.");})
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},payload=>{refresh();const n=payload.new||{};toast("New restaurant notification.");ownerBrowserNotify(n.title||"Hurmat Darbar alert",n.body||"You have a new restaurant update.");})
     .on("postgres_changes",{event:"*",schema:"public",table:"menu_items"},()=>refresh())
     .on("postgres_changes",{event:"*",schema:"public",table:"menu_variants"},()=>refresh())
     .on("postgres_changes",{event:"*",schema:"public",table:"reservations"},()=>refresh())
