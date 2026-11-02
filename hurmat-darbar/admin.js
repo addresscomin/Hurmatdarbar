@@ -253,8 +253,41 @@ const OWNER_VAPID_PUBLIC_KEY="BIVTMUyOjw9WqTLz6pXy84FmsgnjTvU0gF0u7ve64qGR0_355C
 function ownerBase64ToBytes(value){const padding="=".repeat((4-value.length%4)%4);const raw=atob((value+padding).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(raw,c=>c.charCodeAt(0));}
 async function ownerPushState(){
  const enable=document.getElementById("owner-push-enable"),disable=document.getElementById("owner-push-disable");
- if(!enable||!("serviceWorker" in navigator))return;
- try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();enable.textContent=sub?"Push notifications enabled":"Enable push on this device";if(disable)disable.hidden=!sub;}catch{if(disable)disable.hidden=true;}
+ ownerPushReady=false;
+ try{
+  if(!("Notification" in window)||!("PushManager" in window)||!("serviceWorker" in navigator))throw new Error("Push is not supported.");
+  const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();
+  ownerPushReady=Notification.permission==="granted"&&!!sub;
+  if(enable)enable.textContent=ownerPushReady?"Push notifications enabled":"Enable push on this device";
+  if(disable)disable.hidden=!sub;
+ }catch{if(disable)disable.hidden=true;}
+ return ownerPushReady;
+}
+function ownerBrowserNotify(title,body){
+ if(!("Notification" in window)||Notification.permission!=="granted"||document.visibilityState!=="visible")return;
+ try{new Notification(title,{body,icon:"../assets/hurmat-logo-repo.png"});}catch{}
+}
+function showOwnerPushPrompt(){
+ if(document.getElementById("owner-push-prompt"))return;
+ const denied="Notification" in window&&Notification.permission==="denied";
+ const overlay=document.createElement("div");overlay.id="owner-push-prompt";
+ overlay.style.cssText="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:18px;background:rgba(3,18,12,.72);backdrop-filter:blur(8px)";
+ overlay.innerHTML='<section style="width:min(440px,100%);padding:24px;border-radius:22px;background:#f8faf5;color:#173b2a"><h2 style="font:800 19px Manrope;margin:0 0 10px">Owner notifications</h2><p style="font:500 13px/1.7 Manrope;color:#53645a">Enable notifications on this device so new orders, payment proofs and customer delivery checks reach the Owner promptly.</p>'+(denied?'<p style="font:600 12px/1.6 Manrope;color:#a34a38">Notifications are blocked. Open Chrome site settings, allow Notifications, then reopen this dashboard.</p><button id="owner-push-prompt-close" class="btn wide">Continue to dashboard</button>':'<button id="owner-push-prompt-enable" class="btn wide">Allow owner notifications</button><button id="owner-push-prompt-close" class="btn ghost wide" style="margin-top:8px">Not now</button>')+'</section>';
+ document.body.append(overlay);
+ document.getElementById("owner-push-prompt-close").onclick=()=>overlay.remove();
+ const allow=document.getElementById("owner-push-prompt-enable");
+ if(allow)allow.onclick=async()=>{allow.disabled=true;allow.textContent="Enabling…";await enableOwnerPush();await ownerPushState();if(ownerPushReady){overlay.remove();await refresh();}else{allow.disabled=false;allow.textContent="Allow owner notifications";}};
+}
+async function ensureOwnerPushOnLaunch(){
+ if(await ownerPushState())return;
+ showOwnerPushPrompt();
+}
+function showPaymentReceipt(url,orderNo){
+ const old=document.getElementById("payment-receipt-modal");if(old)old.remove();
+ const modal=document.createElement("div");modal.id="payment-receipt-modal";
+ modal.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(4,15,10,.84);display:grid;place-items:center;padding:14px";
+ modal.innerHTML='<section style="width:min(760px,100%);height:min(88dvh,900px);display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:18px;background:#f8faf5;color:#203b30"><header style="display:flex;align-items:center;justify-content:space-between;gap:8px"><b style="font:800 14px Manrope">Payment receipt · Order #'+esc(orderNo||"—")+'</b><button id="close-payment-receipt" aria-label="Close" style="border:0;background:transparent;font-size:26px">×</button></header><div style="flex:1;min-height:0;display:grid;place-items:center;overflow:auto;background:#e9ede7;border-radius:12px;padding:8px"><img src="'+esc(url)+'" alt="Customer payment receipt" style="display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain"></div><a href="'+esc(url)+'" target="_blank" rel="noopener" style="align-self:flex-end;color:#24583d;font:700 12px Manrope">Open original receipt ↗</a></section>';
+ document.body.append(modal);const close=()=>modal.remove();document.getElementById("close-payment-receipt").onclick=close;modal.onclick=e=>{if(e.target===modal)close();};
 }
 async function enableOwnerPush(){
  try{
@@ -525,6 +558,7 @@ function bindActions(){
     try{await api("",{action:"update_reservation_status",reservation_id:b.dataset.reservation,status:b.dataset.resStatus});await refresh();toast("Reservation updated.");}catch(e){toast(e.message,true);}
   });
   const ownerPushEnable=document.getElementById("owner-push-enable");if(ownerPushEnable)ownerPushEnable.onclick=enableOwnerPush;
+  document.querySelectorAll("[data-view-receipt]").forEach(b=>b.onclick=()=>{const p=payments.find(x=>x.id===b.dataset.viewReceipt);if(p?.screenshot_url)showPaymentReceipt(p.screenshot_url,p.orders?.order_no);});
   const ownerPushDisable=document.getElementById("owner-push-disable");if(ownerPushDisable)ownerPushDisable.onclick=disableOwnerPush;
   ownerPushState();
   document.querySelectorAll("[data-read]").forEach(b=>b.onclick=async()=>{
@@ -634,6 +668,7 @@ function bindActions(){
 async function startApp(){
   await refresh();
   if(DEVELOPMENT_PREVIEW) return;
+  await ensureOwnerPushOnLaunch();
   if(availabilityRefreshTimer)clearInterval(availabilityRefreshTimer);
   availabilityRefreshTimer=setInterval(async()=>{
     if(document.hidden)return;
