@@ -123,11 +123,11 @@ function clearAvailability(message){
 }
 async function ensureGuestSession(){
   const {data:{session},error}=await db.auth.getSession();
-  if(error)throw new Error("Could not verify your customer session. Please log in again.");
-  if(!session||!session.user||session.user.is_anonymous){
-    throw new Error("Please create a customer account or log in before continuing.");
-  }
-  return session;
+  if(error)throw new Error("Could not verify your guest session. Please refresh the page.");
+  if(session?.user)return session;
+  const {data,error:signInError}=await db.auth.signInAnonymously();
+  if(signInError||!data?.session||!data?.user)throw new Error("Guest session could not start. Enable Anonymous Sign-Ins in Supabase Auth settings and refresh.");
+  return data.session;
 }
 async function callRestaurantApi(method,query,body){
   const session=await ensureGuestSession();
@@ -313,7 +313,7 @@ async function placeApprovedOrder(){
 }
 checkoutButton.onclick=async()=>{
   const {data:{user}}=await db.auth.getUser();
-  if(!user||user.is_anonymous){document.body.classList.add("customer-locked");customerAuthMessage("Create an account or log in before placing an order.",true);return;}
+  if(!user){try{await ensureGuestSession();}catch(error){alert(error.message);return;}}
   if(placingOrder)return;
   placingOrder=true;checkoutButton.disabled=true;
   try{
@@ -457,15 +457,14 @@ function startCustomerNotificationFeed(userId){
     }).subscribe();
   loadCustomerNotifications();
 }
-function updateCustomerDashboard(signedIn){
+function updateCustomerDashboard(guestReady){
   const nav=document.getElementById("customer-bottom-nav");
   const auth=document.getElementById("customer-auth-form");
   const profile=document.getElementById("customer-profile-card");
-  if(nav)nav.hidden=!signedIn;
-  if(auth)auth.hidden=!!signedIn;
-  if(profile)profile.hidden=!signedIn;
-  if(!signedIn){document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.remove("active"));}
-  else if(!document.querySelector("[data-customer-tab].active"))showCustomerTab("profile");
+  if(nav)nav.hidden=false;
+  if(auth)auth.hidden=true;
+  if(profile)profile.hidden=false;
+  if(!document.querySelector("[data-customer-tab].active"))showCustomerTab("menu");
 }
 function showCustomerTab(tab){
   const menu=document.getElementById("menu"), services=document.getElementById("services"), account=document.getElementById("my-account"), orders=document.getElementById("my-orders"), visit=document.getElementById("visit"), notifications=document.getElementById("customer-notifications");
@@ -491,14 +490,23 @@ const customerNav=document.getElementById("customer-bottom-nav");
 if(customerNav)customerNav.addEventListener("click",e=>{const b=e.target.closest("[data-customer-tab]");if(b)showCustomerTab(b.dataset.customerTab);});
 const customerAuthForm=document.getElementById("customer-auth-form");
 let customerAuthMode="signup";
-function applyCustomerGate(){
-  return db.auth.getUser().then(({data:{user}})=>{
-    const signedIn=!!user&&!user.is_anonymous;
-    document.body.classList.toggle("customer-locked",!signedIn);
-    document.body.classList.toggle("customer-authenticated",signedIn);
-    updateCustomerDashboard(signedIn);
-    return signedIn;
-  }).catch(()=>{document.body.classList.add("customer-locked");return false;});
+async function applyCustomerGate(){
+  try{
+    const session=await ensureGuestSession();
+    const user=session.user;
+    const guestReady=!!user;
+    document.body.classList.toggle("customer-locked",false);
+    document.body.classList.toggle("customer-authenticated",guestReady);
+    updateCustomerDashboard(guestReady);
+    return guestReady;
+  }catch(error){
+    document.body.classList.remove("customer-locked");
+    document.body.classList.add("customer-guest-error");
+    updateCustomerDashboard(false);
+    const status=document.getElementById("customer-profile-summary");
+    if(status)status.textContent=error.message||"Guest mode is temporarily unavailable.";
+    return false;
+  }
 }
 let activeCustomerUserId=null;
 let myOrdersLoadVersion=0;
@@ -509,14 +517,14 @@ function resetCustomerOrders(message){
   if(message)myOrdersRoot.append(el("p","my-orders-empty",message));
 }
 db.auth.onAuthStateChange((event,session)=>{
-  const signedIn=!!session?.user&&!session.user.is_anonymous;
+  const signedIn=!!session?.user;
   const nextUserId=signedIn?session.user.id:null;
   document.body.classList.toggle("customer-locked",!signedIn);
   document.body.classList.toggle("customer-authenticated",signedIn);
   updateCustomerDashboard(signedIn);
   if(nextUserId!==activeCustomerUserId){
     activeCustomerUserId=nextUserId;
-    resetCustomerOrders(signedIn?"Loading your orders…":"Log in to see your orders.");
+    resetCustomerOrders(signedIn?"Loading your orders…":"Your guest order history will appear here.");
     if(signedIn)Promise.resolve().then(()=>{loadMyOrders(nextUserId);loadCustomerProfile();startCustomerNotificationFeed(nextUserId);});
     else if(customerNotificationChannel){db.removeChannel(customerNotificationChannel);customerNotificationChannel=null;}
   }
@@ -622,27 +630,27 @@ async function loadCustomerProfile(){
   const summary=document.getElementById("customer-profile-summary");
   const logout=document.getElementById("customer-auth-logout");
   const save=document.getElementById("profile-save");
-  if(!user||user.is_anonymous){
-    if(summary)summary.textContent="Create an account or log in to manage your profile.";
+  if(!user){
+    if(summary)summary.textContent="Guest identity is not ready yet. Refresh the page to retry.";
     if(logout)logout.hidden=true;if(save)save.disabled=true;return;
   }
-  if(logout)logout.hidden=false;if(save)save.disabled=false;
+  if(logout)logout.hidden=true;if(save)save.disabled=false;
   const {data,error}=await db.from("customer_profiles").select("full_name,phone,email").eq("user_id",user.id).maybeSingle();
   if(error){if(summary)summary.textContent="Profile could not be loaded: "+error.message;return;}
   document.getElementById("profile-name").value=data?.full_name||user.user_metadata?.full_name||"";
   document.getElementById("profile-phone").value=data?.phone||user.user_metadata?.phone||"";
-  summary.textContent=(data?.email||user.email||"")+" · Your account is active.";
+  summary.textContent="Guest ID: "+user.id+" · Your profile and orders are saved to this browser session.";
   const checkoutName=document.getElementById("customer-name"),checkoutPhone=document.getElementById("customer-phone");
   if(checkoutName&&!checkoutName.value)checkoutName.value=data?.full_name||"";
   if(checkoutPhone&&!checkoutPhone.value)checkoutPhone.value=data?.phone||"";
 }
 const profileSave=document.getElementById("profile-save");
 if(profileSave)profileSave.onclick=async()=>{
-  const {data:{user}}=await db.auth.getUser();if(!user||user.is_anonymous){customerAuthMessage("Please create an account or log in first.",true);return;}
+  const {data:{user}}=await db.auth.getUser();if(!user){customerAuthMessage("Guest identity is not ready. Refresh the page.",true);return;}
   const full_name=document.getElementById("profile-name").value.trim(),phone=document.getElementById("profile-phone").value.trim();
   if(full_name.length<2){customerAuthMessage("Enter a valid display name.",true);return;}
   profileSave.disabled=true;
-  const {error}=await db.from("customer_profiles").upsert({user_id:user.id,full_name,phone,email:user.email,updated_at:new Date().toISOString()});
+  const {error}=await db.from("customer_profiles").upsert({user_id:user.id,full_name,phone,email:user.email||null,updated_at:new Date().toISOString()});
   profileSave.disabled=false;
   if(error){customerAuthMessage(error.message,true);return;}
   const {error:metadataError}=await db.auth.updateUser({data:{full_name,phone}});
@@ -751,8 +759,8 @@ async function loadMyOrders(expectedUserId=null){
   let requestVersion=0,userId=null;
   try{
     const {data:{user}}=await db.auth.getUser();
-    if(!user||user.is_anonymous){
-      resetCustomerOrders("Log in to see your orders.");
+    if(!user){
+      resetCustomerOrders("Your guest order history will appear here.");
       return;
     }
     userId=user.id;
@@ -760,7 +768,7 @@ async function loadMyOrders(expectedUserId=null){
     requestVersion=++myOrdersLoadVersion;
     const data=await callRestaurantApi("GET","view=my_orders");
     const {data:{user:verifiedUser}}=await db.auth.getUser();
-    if(requestVersion!==myOrdersLoadVersion||!verifiedUser||verifiedUser.is_anonymous||verifiedUser.id!==userId)return;
+    if(requestVersion!==myOrdersLoadVersion||!verifiedUser||verifiedUser.id!==userId)return;
     const {data:refundRows}=await db.from("refund_requests").select("id,order_id,amount,reason,status,refund_reference,owner_note,requested_at,processed_at").eq("customer_id",userId).order("requested_at",{ascending:false}).limit(30);
     const enriched=await Promise.all((data.orders||[]).slice(0,12).map(async o=>{
       if(["delivered","cancelled","rejected","delivery_failed"].includes(o.status))return o;
@@ -768,7 +776,7 @@ async function loadMyOrders(expectedUserId=null){
       return {...o,live:live||null};
     }));
     const {data:{user:finalUser}}=await db.auth.getUser();
-    if(requestVersion!==myOrdersLoadVersion||!finalUser||finalUser.is_anonymous||finalUser.id!==userId)return;
+    if(requestVersion!==myOrdersLoadVersion||!finalUser||finalUser.id!==userId)return;
     renderMyOrders(enriched,data.payments||[],refundRows||[]);
   }
   catch(e){
