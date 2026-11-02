@@ -18,7 +18,7 @@ const statusNames = {
 const tabs = [["home","⌂","Dashboard"],["orders","▤","Orders"],["tracking","⌖","Live"],["riders","♧","Riders"],["profile","♙","Profile"],["menu","▦","Menu"],["inventory","▣","Inventory"],["availability","✓","Delivery checks"],["payments","₹","Payments"],["refunds","↩","Refunds"],["reservations","◷","Bookings"],["reports","▥","Reports"],["settings","⚙","Store setup"],["alerts","♢","Alerts"]];
 // Temporary development-only UI preview. Live data and all write operations remain protected.
 const DEVELOPMENT_PREVIEW = false;
-let user=null, role=null, page="home", orders=[], menuItems=[], menuCategories=[], reservations=[], riders=[], riderLocations=[], notifications=[], availabilityRequests=[], cashCollections=[], availabilityLoadError="", menuLoadError="", payments=[], refunds=[], settings=null, channel=null, busy=false, availabilityRefreshTimer=null;
+let user=null, role=null, page="home", orders=[], menuItems=[], menuCategories=[], reservations=[], riders=[], riderLocations=[], notifications=[], availabilityRequests=[], cashCollections=[], availabilityLoadError="", menuLoadError="", payments=[], refunds=[], settings=null, channel=null, busy=false, availabilityRefreshTimer=null, ownerPushReady=false;
 
 function toast(message, bad=false){
   let el=document.getElementById("admin-toast");
@@ -94,7 +94,7 @@ function header(){
   const moreTabs=tabs.filter(t=>!["home","orders","tracking","riders","profile"].includes(t[0]));
   const status=DEVELOPMENT_PREVIEW?'<span class="pill">PREVIEW MODE</span>':'<span class="pill owner-role-pill">'+esc(role||"STAFF").toUpperCase()+'</span>';
   return '<header class="partner-topbar"><div class="topbar-brand"><div class="logo"><img src="../assets/hurmat-logo-repo.png" alt="Hurmat Darbar"></div><div><b>HURMAT OWNER</b><small>'+(DEVELOPMENT_PREVIEW?'DEVELOPMENT WORKSPACE':'LIVE RESTAURANT OPERATIONS')+'</small></div></div><div class="owner-header-actions">'+status+
-  '<button class="header-icon notification-trigger" id="owner-notifications" aria-label="Notifications"><span>♧</span>'+(unread?'<i>'+Math.min(unread,99)+'</i>':'')+'</button>'+
+  '<button class="header-icon notification-trigger" id="owner-notifications" aria-label="Notifications"><span><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></span>'+(unread?'<i>'+Math.min(unread,99)+'</i>':'')+'</button>'+
   '<button class="header-icon menu-trigger" id="owner-menu" aria-label="More options" aria-expanded="false"><span>☰</span></button>'+
   '<div class="owner-more-menu" id="owner-more-menu" hidden>'+'<div class="menu-panel-head"><b>QUICK CONTROLS</b><small>'+esc(role||"STAFF").toUpperCase()+' ACCESS</small></div>'+(DEVELOPMENT_PREVIEW?"":'<button class="menu-control" id="outlet-toggle" data-open="'+String(open)+'"><span class="menu-item-icon">◉</span><span class="menu-item-label">Store status</span><strong>'+(open?"Accepting orders":"Paused")+'</strong></button>')+'<div class="menu-divider"></div>'+moreTabs.map(t=>'<button data-tab="'+t[0]+'" class="'+(page===t[0]?"on":"")+'"><span class="menu-item-icon">'+t[1]+'</span><span class="menu-item-label">'+t[2]+'</span><span class="menu-item-arrow">›</span></button>').join("")+(DEVELOPMENT_PREVIEW?"":'<div class="menu-divider"></div><button id="signout" class="menu-signout"><span class="menu-item-icon">↪</span><span class="menu-item-label">Sign out</span></button>')+'</div></div></header>';
 }
@@ -205,14 +205,14 @@ function availabilityRequestCard(r){
   const items=(r.items_snapshot||[]).map(i=>esc(i.qty)+" × "+esc(i.item_name)+" ("+esc(i.variant_label)+") · "+money(i.line_total)).join("<br>");
   const distance=r.distance_m==null?"Restaurant map pin not verified":(Number(r.distance_m).toLocaleString("en-IN")+" m · "+(r.within_radius?"inside configured radius":"outside configured radius"));
   const pending=r.status==="pending";
-  const canApprove=pending&&r.within_radius===true;
+  const canApprove=pending&&r.within_radius===true&&ownerPushReady;
   return '<article class="card" style="margin:10px 0"><div class="row"><b>Delivery check · '+esc(r.customer_name)+'</b><span class="tag '+(r.status==="approved"?"s-ready":r.status==="rejected"||r.status==="expired"?"cancelled":"s-new")+'">'+esc(r.status.toUpperCase())+'</span></div>'+
     '<p class="mute" style="margin:8px 0">'+esc(r.customer_phone)+' · '+new Date(r.created_at).toLocaleString()+'</p>'+
     '<p class="mute">'+esc(r.address_text)+'</p><p class="mute">Distance: '+esc(distance)+'</p>'+
     '<p style="margin:10px 0;line-height:1.7">'+(items||"No item details")+'</p>'+
     '<div class="row"><span class="mute">Subtotal '+money(r.subtotal)+' · Delivery '+money(r.delivery_fee)+'</span><b class="price">'+money(r.total)+'</b></div>'+
     (r.notes?'<p class="mute">Note: '+esc(r.notes)+'</p>':'')+
-    (pending?'<div class="actions"><button class="btn sm" data-avail-id="'+esc(r.id)+'" data-avail-decision="approved" '+(canApprove?"":'disabled title="Verify the restaurant pin and delivery radius first"')+'>YES — Available</button><button class="btn sm ghost" data-avail-id="'+esc(r.id)+'" data-avail-decision="rejected">NO — Not available</button></div>':'')+
+    (pending?'<div class="actions"><button class="btn sm" data-avail-id="'+esc(r.id)+'" data-avail-decision="approved" '+(canApprove?"":'disabled title="Enable owner push notifications and verify delivery radius first"')+'>YES — Available</button><button class="btn sm ghost" data-avail-id="'+esc(r.id)+'" data-avail-decision="rejected">NO — Not available</button></div>':'')+
     (r.decision_reason?'<p class="mute">Decision: '+esc(r.decision_reason)+'</p>':'')+
     (r.status==="approved"?'<p class="mute">Customer can now continue to payment. Approval expires '+new Date(r.expires_at).toLocaleString()+'</p>':'')+
     '</article>';
@@ -231,7 +231,7 @@ function paymentsView(){
   return '<section class="partner-panel"><div class="panel-heading"><div><h2>UPI payment verification</h2><p>Check the customer UTR/reference and payment screenshot before confirming the order.</p></div><span class="pill">'+pending.length+' awaiting review</span></div>'+
     (payments.map(p=>'<article class="card" style="margin:12px 0"><div class="row"><b>Order #'+esc(p.orders?.order_no||"—")+'</b><span class="tag '+(p.status==="approved"?"s-served":p.status==="rejected"?"s-cancelled":"s-new")+'">'+esc(p.status)+'</span></div>'+
     '<p class="mute">'+esc(p.orders?.customer_name||"Customer")+' · '+esc(p.orders?.customer_phone||"")+'</p><p><b>Amount: '+money(p.orders?.total||0)+'</b></p><p class="mute">UPI reference: <b>'+esc(p.upi_reference)+'</b></p>'+
-    (p.screenshot_url?'<a href="'+esc(p.screenshot_url)+'" target="_blank" rel="noopener" class="btn ghost sm">View payment screenshot ↗</a>':'<small>Screenshot link unavailable. Refresh to request a new secure link.</small>')+
+    (p.screenshot_url?'<button type="button" class="btn ghost sm" data-view-receipt="'+esc(p.id)+'">View payment receipt</button>':'<small>Receipt unavailable. Refresh to request a new secure link.</small>')+
     (p.status==="pending"?'<div class="actions"><button class="btn sm" data-payment-review="'+esc(p.id)+'" data-decision="approved">Verify & confirm order</button><button class="btn ghost sm" data-payment-review="'+esc(p.id)+'" data-decision="rejected">Reject proof</button></div>':'<p class="mute">Review note: '+esc(p.review_note||"—")+'</p>')+
     '</article>').join("")||empty("No UPI payment submissions yet."))+'</section>';
 }
@@ -253,8 +253,41 @@ const OWNER_VAPID_PUBLIC_KEY="BIVTMUyOjw9WqTLz6pXy84FmsgnjTvU0gF0u7ve64qGR0_355C
 function ownerBase64ToBytes(value){const padding="=".repeat((4-value.length%4)%4);const raw=atob((value+padding).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(raw,c=>c.charCodeAt(0));}
 async function ownerPushState(){
  const enable=document.getElementById("owner-push-enable"),disable=document.getElementById("owner-push-disable");
- if(!enable||!("serviceWorker" in navigator))return;
- try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();enable.textContent=sub?"Push notifications enabled":"Enable push on this device";if(disable)disable.hidden=!sub;}catch{if(disable)disable.hidden=true;}
+ ownerPushReady=false;
+ try{
+  if(!("Notification" in window)||!("PushManager" in window)||!("serviceWorker" in navigator))throw new Error("Push is not supported.");
+  const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();
+  ownerPushReady=Notification.permission==="granted"&&!!sub;
+  if(enable)enable.textContent=ownerPushReady?"Push notifications enabled":"Enable push on this device";
+  if(disable)disable.hidden=!sub;
+ }catch{if(disable)disable.hidden=true;}
+ return ownerPushReady;
+}
+function ownerBrowserNotify(title,body){
+ if(!("Notification" in window)||Notification.permission!=="granted"||document.visibilityState!=="visible")return;
+ try{new Notification(title,{body,icon:"../assets/hurmat-logo-repo.png"});}catch{}
+}
+function showOwnerPushPrompt(){
+ if(document.getElementById("owner-push-prompt"))return;
+ const denied="Notification" in window&&Notification.permission==="denied";
+ const overlay=document.createElement("div");overlay.id="owner-push-prompt";
+ overlay.style.cssText="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:18px;background:rgba(3,18,12,.72);backdrop-filter:blur(8px)";
+ overlay.innerHTML='<section style="width:min(440px,100%);padding:24px;border-radius:22px;background:#f8faf5;color:#173b2a"><h2 style="font:800 19px Manrope;margin:0 0 10px">Owner notifications</h2><p style="font:500 13px/1.7 Manrope;color:#53645a">Enable notifications on this device so new orders, payment proofs and customer delivery checks reach the Owner promptly.</p>'+(denied?'<p style="font:600 12px/1.6 Manrope;color:#a34a38">Notifications are blocked. Open Chrome site settings, allow Notifications, then reopen this dashboard.</p><button id="owner-push-prompt-close" class="btn wide">Continue to dashboard</button>':'<button id="owner-push-prompt-enable" class="btn wide">Allow owner notifications</button><button id="owner-push-prompt-close" class="btn ghost wide" style="margin-top:8px">Not now</button>')+'</section>';
+ document.body.append(overlay);
+ document.getElementById("owner-push-prompt-close").onclick=()=>overlay.remove();
+ const allow=document.getElementById("owner-push-prompt-enable");
+ if(allow)allow.onclick=async()=>{allow.disabled=true;allow.textContent="Enabling…";await enableOwnerPush();await ownerPushState();if(ownerPushReady){overlay.remove();await refresh();}else{allow.disabled=false;allow.textContent="Allow owner notifications";}};
+}
+async function ensureOwnerPushOnLaunch(){
+ if(await ownerPushState())return;
+ showOwnerPushPrompt();
+}
+function showPaymentReceipt(url,orderNo){
+ const old=document.getElementById("payment-receipt-modal");if(old)old.remove();
+ const modal=document.createElement("div");modal.id="payment-receipt-modal";
+ modal.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(4,15,10,.84);display:grid;place-items:center;padding:14px";
+ modal.innerHTML='<section style="width:min(760px,100%);height:min(88dvh,900px);display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:18px;background:#f8faf5;color:#203b30"><header style="display:flex;align-items:center;justify-content:space-between;gap:8px"><b style="font:800 14px Manrope">Payment receipt · Order #'+esc(orderNo||"—")+'</b><button id="close-payment-receipt" aria-label="Close" style="border:0;background:transparent;font-size:26px">×</button></header><div style="flex:1;min-height:0;display:grid;place-items:center;overflow:auto;background:#e9ede7;border-radius:12px;padding:8px"><img src="'+esc(url)+'" alt="Customer payment receipt" style="display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain"></div><a href="'+esc(url)+'" target="_blank" rel="noopener" style="align-self:flex-end;color:#24583d;font:700 12px Manrope">Open original receipt ↗</a></section>';
+ document.body.append(modal);const close=()=>modal.remove();document.getElementById("close-payment-receipt").onclick=close;modal.onclick=e=>{if(e.target===modal)close();};
 }
 async function enableOwnerPush(){
  try{
@@ -525,6 +558,7 @@ function bindActions(){
     try{await api("",{action:"update_reservation_status",reservation_id:b.dataset.reservation,status:b.dataset.resStatus});await refresh();toast("Reservation updated.");}catch(e){toast(e.message,true);}
   });
   const ownerPushEnable=document.getElementById("owner-push-enable");if(ownerPushEnable)ownerPushEnable.onclick=enableOwnerPush;
+  document.querySelectorAll("[data-view-receipt]").forEach(b=>b.onclick=()=>{const p=payments.find(x=>x.id===b.dataset.viewReceipt);if(p?.screenshot_url)showPaymentReceipt(p.screenshot_url,p.orders?.order_no);});
   const ownerPushDisable=document.getElementById("owner-push-disable");if(ownerPushDisable)ownerPushDisable.onclick=disableOwnerPush;
   ownerPushState();
   document.querySelectorAll("[data-read]").forEach(b=>b.onclick=async()=>{
@@ -634,6 +668,7 @@ function bindActions(){
 async function startApp(){
   await refresh();
   if(DEVELOPMENT_PREVIEW) return;
+  await ensureOwnerPushOnLaunch();
   if(availabilityRefreshTimer)clearInterval(availabilityRefreshTimer);
   availabilityRefreshTimer=setInterval(async()=>{
     if(document.hidden)return;
@@ -658,10 +693,11 @@ async function startApp(){
   },8000);
   if(channel)await supabase.removeChannel(channel);
   channel=supabase.channel("hurmat-admin-live")
-    .on("postgres_changes",{event:"*",schema:"public",table:"orders"},()=>refresh())
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"orders"},payload=>{refresh();const o=payload.new||{};ownerBrowserNotify("New order received","Order #"+(o.order_no||"—")+" · "+money(o.total||0));})
+    .on("postgres_changes",{event:"UPDATE",schema:"public",table:"orders"},()=>refresh())
     .on("postgres_changes",{event:"*",schema:"public",table:"payment_submissions"},()=>refresh())
     .on("postgres_changes",{event:"*",schema:"public",table:"refund_requests"},()=>refresh())
-    .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},()=>{refresh();toast("New restaurant notification.");})
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},payload=>{refresh();const n=payload.new||{};toast("New restaurant notification.");ownerBrowserNotify(n.title||"Hurmat Darbar alert",n.body||"You have a new restaurant update.");})
     .on("postgres_changes",{event:"*",schema:"public",table:"menu_items"},()=>refresh())
     .on("postgres_changes",{event:"*",schema:"public",table:"menu_variants"},()=>refresh())
     .on("postgres_changes",{event:"*",schema:"public",table:"reservations"},()=>refresh())
