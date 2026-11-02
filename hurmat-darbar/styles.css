@@ -1213,3 +1213,37 @@ body.customer-locked #my-account #customer-auth-form #customer-auth-submit{
 .tracking-live-map{display:block;width:100%;height:260px;border:1px solid var(--hd-line);border-radius:14px;margin:8px 0;background:#17291f}
 .tracking-result .my-order-map{display:inline-flex;width:max-content;max-width:100%;padding:10px 13px;border:1px solid var(--hd-gold);border-radius:9px;color:var(--hd-gold);font-weight:800;text-decoration:none}
 @media(max-width:600px){.tracking-live-map{height:230px}}
+
+/* Customer welcome permissions and simplified dashboard navigation */
+.permission-welcome{position:fixed;inset:0;z-index:10020;display:grid;place-items:center;padding:18px;background:rgba(5,12,8,.78);backdrop-filter:blur(8px)}
+.permission-welcome[hidden]{display:none!important}
+.permission-panel{width:min(100%,470px);max-height:min(92dvh,760px);overflow:auto;padding:28px 23px;background:#f8f6ef;color:#17251b;border:1px solid #d8c89f;border-radius:18px;box-shadow:0 25px 90px #0007}
+.permission-kicker{font-size:9px;font-weight:900;letter-spacing:2px;color:#8a6b35}
+.permission-panel h2{font:800 clamp(30px,8vw,42px)/1.06 'Playfair Display',serif;margin:14px 0}
+.permission-panel h2 i{color:#9b783e}
+.permission-panel>p{font-size:12px;line-height:1.7;color:#5d665e}
+.permission-choice{display:grid;gap:11px;margin:20px 0}
+.permission-choice>div{padding:15px;border:1px solid #ddd5c2;border-radius:12px;background:#fff}
+.permission-choice b,.permission-choice small{display:block}
+.permission-choice b{font-size:13px}
+.permission-choice small{margin:6px 0 12px;color:#69736b;font-size:11px;line-height:1.55}
+.permission-choice button{width:100%;padding:12px;border:0;border-radius:8px;background:#17291f;color:#f4efe0;font:800 11px Manrope;cursor:pointer}
+.permission-choice button:disabled{opacity:.6}
+.permission-skip{width:100%;padding:12px;border:1px solid #cfc7b7;border-radius:8px;background:transparent;color:#28352c;font:800 11px Manrope}
+.permission-footnote{display:block;margin-top:12px;text-align:center;color:#72796f;font-size:9px;line-height:1.5}
+.header-notification{position:relative;width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--cream);cursor:pointer;flex:0 0 auto}
+.header-notification svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.header-notification b{position:absolute;right:-3px;top:-4px;min-width:16px;height:16px;padding:0 4px;display:grid;place-items:center;border-radius:20px;background:#a33;color:#fff;font-size:9px}
+.header-notification b[hidden]{display:none}
+.customer-bottom-nav{width:min(520px,calc(100% - 16px));gap:3px;padding:7px 5px;border-radius:16px}
+.customer-bottom-nav button{min-width:0;padding:8px 2px}
+.customer-bottom-nav button span{font-size:18px}
+.customer-bottom-nav button small{font-size:9px}
+#services[hidden],#my-orders[hidden],#my-account[hidden],#customer-notifications[hidden],#menu[hidden],#visit[hidden]{display:none!important}
+#services .service-grid{grid-template-columns:minmax(0,700px);justify-content:center}
+.tracking-card{margin:12px auto 20px;max-width:700px}
+#tracking-form{display:grid;gap:9px}
+#tracking-form label{font-size:11px;font-weight:800;color:var(--mute)}
+#tracking-form input{width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;background:#0e1b14;color:var(--cream);font:12px Manrope}
+.top{gap:12px}
+@media(max-width:650px){.header-notification{width:36px;height:36px}.top{gap:8px}.permission-panel{padding:23px 18px}.customer-bottom-nav button small{font-size:8px}}

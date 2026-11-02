@@ -387,8 +387,7 @@ async function loadCustomerNotifications(){
   if(error){customerNotificationsRoot.replaceChildren(el("p","my-orders-empty","Notifications could not be loaded: "+error.message));return;}
   renderCustomerNotifications(data||[]);
   const unread=(data||[]).filter(x=>!x.is_read).length;
-  const badge=document.getElementById("customer-notification-count");
-  if(badge){badge.textContent=String(unread);badge.hidden=unread===0;}
+  ["customer-notification-count","header-notification-count"].forEach(id=>{const badge=document.getElementById(id);if(badge){badge.textContent=String(unread);badge.hidden=unread===0;}});
 }
 const CUSTOMER_VAPID_PUBLIC_KEY="BIVTMUyOjw9WqTLz6pXy84FmsgnjTvU0gF0u7ve64qGR0_355CLatQExhK5l_v-j0ISvFzKF8GlUw4uQvhDZ5Nk";
 function urlBase64ToUint8Array(value){
@@ -457,6 +456,45 @@ function startCustomerNotificationFeed(userId){
     }).subscribe();
   loadCustomerNotifications();
 }
+
+function showPermissionWelcome(){
+  const modal=document.getElementById("permission-welcome");
+  if(!modal||localStorage.getItem("hd-permission-welcome-dismissed")==="1")return;
+  if(!document.body.classList.contains("customer-authenticated"))return;
+  modal.hidden=false;
+  const n=document.getElementById("notification-permission-status");
+  const l=document.getElementById("location-permission-status");
+  if("Notification" in window&&Notification.permission==="granted")n.textContent="Notifications are already enabled on this device.";
+  else if("Notification" in window&&Notification.permission==="denied")n.textContent="Notifications are blocked in browser settings. You can still place orders.";
+  if(!navigator.geolocation)l.textContent="Location is not supported by this browser.";
+}
+function dismissPermissionWelcome(){
+  const modal=document.getElementById("permission-welcome");
+  if(modal)modal.hidden=true;
+  localStorage.setItem("hd-permission-welcome-dismissed","1");
+}
+const welcomeNotify=document.getElementById("welcome-enable-notifications");
+if(welcomeNotify)welcomeNotify.addEventListener("click",async()=>{
+  await enableCustomerAlerts();
+  const status=document.getElementById("notification-permission-status");
+  if(status)status.textContent=("Notification" in window&&Notification.permission==="granted")?"Notifications enabled on this device.":"Not enabled. You can change this in your browser site settings.";
+});
+const welcomeLocation=document.getElementById("welcome-enable-location");
+if(welcomeLocation)welcomeLocation.addEventListener("click",()=>{
+  const status=document.getElementById("location-permission-status");
+  if(!navigator.geolocation){if(status)status.textContent="Location is not supported by this browser.";return;}
+  if(status)status.textContent="Waiting for your browser location permission…";
+  navigator.geolocation.getCurrentPosition(position=>{
+    if(status)status.textContent="Location enabled. Delivery coverage will be checked when you place an order.";
+    welcomeLocation.textContent="Location allowed ✓";
+    welcomeLocation.disabled=true;
+  },error=>{
+    if(status)status.textContent=error.code===1?"Location was not allowed. You can enable it in browser site settings.":"Could not get location. Check device location and try again.";
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+});
+const welcomeLater=document.getElementById("permission-later");
+if(welcomeLater)welcomeLater.addEventListener("click",dismissPermissionWelcome);
+
 function updateCustomerDashboard(guestReady){
   const nav=document.getElementById("customer-bottom-nav");
   const auth=document.getElementById("customer-auth-form");
@@ -468,19 +506,23 @@ function updateCustomerDashboard(guestReady){
 }
 function showCustomerTab(tab){
   const menu=document.getElementById("menu"), services=document.getElementById("services"), account=document.getElementById("my-account"), orders=document.getElementById("my-orders"), visit=document.getElementById("visit"), notifications=document.getElementById("customer-notifications");
+  const reservations=tab==="reservations";
   const auth=document.getElementById("customer-auth-form"), profile=document.getElementById("customer-profile-card");
   if(auth)auth.hidden=document.body.classList.contains("customer-authenticated");
   if(profile)profile.hidden=tab!=="profile";
   if(menu)menu.hidden=tab!=="menu";
-  if(services)services.hidden=tab!=="menu";
+  if(services)services.hidden=tab!=="reservations";
   if(account)account.hidden=tab!=="profile";
   if(orders)orders.hidden=tab!=="orders";
   if(visit)visit.hidden=tab!=="menu";
   if(notifications)notifications.hidden=tab!=="notifications";
   if(tab==="notifications")loadCustomerNotifications();
+  if(reservations&&services)services.scrollTop=0;
   document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab===tab));
   window.scrollTo({top:0,behavior:"smooth"});
 }
+const headerNotifications=document.getElementById("header-notifications");
+if(headerNotifications)headerNotifications.addEventListener("click",()=>showCustomerTab("notifications"));
 const alertsButton=document.getElementById("enable-customer-alerts");
 if(alertsButton)alertsButton.addEventListener("click",enableCustomerAlerts);
 const disableAlertsButton=document.getElementById("disable-customer-alerts");
@@ -522,6 +564,7 @@ db.auth.onAuthStateChange((event,session)=>{
   document.body.classList.toggle("customer-locked",!signedIn);
   document.body.classList.toggle("customer-authenticated",signedIn);
   updateCustomerDashboard(signedIn);
+  if(nextUserId&&!activeCustomerUserId)setTimeout(showPermissionWelcome,250);
   if(nextUserId!==activeCustomerUserId){
     activeCustomerUserId=nextUserId;
     resetCustomerOrders(signedIn?"Loading your orders…":"Your guest order history will appear here.");
@@ -530,7 +573,7 @@ db.auth.onAuthStateChange((event,session)=>{
   }
 });
 // Keep the page locked until Supabase confirms a registered customer session.
-applyCustomerGate().then(signedIn=>{if(signedIn&&new URLSearchParams(location.search).get("tab")==="notifications")showCustomerTab("notifications");});
+applyCustomerGate().then(signedIn=>{if(signedIn&&new URLSearchParams(location.search).get("tab")==="notifications")showCustomerTab("notifications");else if(signedIn)showPermissionWelcome();});
 async function requestCustomerPasswordReset(){
   const email=document.getElementById("account-email").value.trim().toLowerCase();
   if(!email||!document.getElementById("account-email").checkValidity()){customerAuthMessage("Enter your registered email first, then tap Forgot password.",true);return;}
