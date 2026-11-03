@@ -1609,3 +1609,67 @@ footer :is(p,span,a){color:var(--hd-ink)}
  .customer-bottom-nav:not([hidden]){width:calc(100% - 20px)!important;min-height:64px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;padding:6px!important}
  .customer-bottom-nav button{height:50px!important}
 }
+
+
+/* ===== Hurmat Darbar customer workflow repair: readable pink/white storefront ===== */
+:root{
+  --hd-green:#e8336d;
+  --hd-green-dark:#c92159;
+  --hd-mint:#fff0f5;
+  --hd-cream:#ffffff;
+  --hd-orange:#e8336d;
+  --hd-ink:#211f28;
+  --hd-muted:#777482;
+}
+html{scroll-behavior:smooth}
+body{background:#fff;color:#211f28}
+.top{background:#fff;color:#211f28;border-bottom:1px solid #f0e8ec}
+.top nav,.top nav a,.logo,.logo b{color:#211f28}
+.top nav a:hover,.details a:hover{color:#e8336d}
+.home-hero{background:#fff;color:#211f28}
+.home-hero h1,.home-hero p,.home-welcome,.home-location b{color:#211f28}
+.home-hero h1 em{color:#e8336d}
+.home-location small,.home-location .location-pin{color:#e8336d}
+.hero-order-btn,.btn.primary,.checkout-btn,.card-add,.permission-choice button{background:#e8336d!important;color:#fff!important;border-color:#e8336d!important}
+.menu,.customer-tools,.visit,footer{color:#211f28}
+.menu h2,.menu h3,.customer-tools h2,.customer-tools h3,.visit h2{color:#211f28}
+.menu h2 span,.customer-tools h2 span,.visit h2 span{color:#e8336d}
+.eyebrow,.menu-search-trigger,.chip.active{color:#e8336d}
+.chip.active{background:#fff0f5;border-color:#f7c6d7}
+.menu-search,.menu-search input{background:#fff;color:#211f28}
+.menu-search input::placeholder{color:#8b8790}
+.menu-status,.menu-intro,.menu-feature-heading span{color:#777482}
+.menu-card,.food-card,.service-card{background:#fff;color:#211f28;border-color:#f0e8ec}
+.food-body,.food-body h3,.food-description,.price-stack{color:#211f28}
+.customer-bottom-nav{background:#fff;border:1px solid #f0e8ec;box-shadow:0 10px 32px #26101a18}
+.customer-bottom-nav button{color:#5f5a65}
+.customer-bottom-nav button.active{background:#fff0f5;color:#e8336d}
+.mobile-cart-bar{background:#e8336d;color:#fff;box-shadow:0 9px 25px #e8336d35}
+.cart-panel{background:#fff!important;color:#211f28!important;border-left:1px solid #f0e8ec;box-shadow:-18px 0 55px #21101a18}
+.cart-head{background:#fff;border-color:#f0e8ec!important;color:#211f28!important}
+.cart-head .eyebrow,.cart-head h2,.cart-head h2 span,.cart-head small{color:#211f28!important}
+.cart-head h2 span{color:#e8336d!important}
+.cart-head button{color:#211f28!important;background:#fff0f5!important;border:0;border-radius:50%}
+.cart-header-count{color:#777482!important}
+.cart-lines,.cart-line,.cart-line *{color:#211f28}
+.cart-line{border-color:#f0e8ec!important}
+.cart-line .cart-item-name,.cart-line strong,.cart-line b{color:#211f28!important}
+.cart-line .cart-item-meta,.cart-line small{color:#777482!important}
+.cart-line button{color:#e8336d!important}
+.cart-summary{background:#fff!important;border-color:#f0e8ec!important;color:#211f28!important}
+.cart-summary .summary-title,.cart-summary p,.cart-summary b,.cart-summary label,.cart-summary .checkout-title{color:#211f28!important}
+.cart-summary small,.cart-summary .fee-note,.cart-summary #order-footnote{color:#777482!important}
+.cart-summary input,.cart-summary textarea{background:#fff!important;color:#211f28!important;border:1px solid #e8e2e6!important}
+.cart-summary input::placeholder,.cart-summary textarea::placeholder{color:#928d96!important}
+.cart-summary .cart-total,.cart-summary .cart-total b{color:#e8336d!important}
+.cart-summary .checkout-btn{background:#e8336d!important;color:#fff!important}
+.cart-scrim{background:#1b1118a8}
+.order-success .success-card{background:#fff;color:#211f28}
+.order-success .success-card h2,.order-success .success-card p{color:#211f28}
+.order-success .success-reference{background:#fff0f5;color:#211f28}
+@media(max-width:700px){
+ .top{background:#fff}
+ .cart-panel{background:#fff!important;color:#211f28!important}
+ .cart-head{background:#fff!important}
+ .cart-summary{background:#fff!important}
+}
