@@ -466,7 +466,6 @@ function showPermissionWelcome(){
   const notificationReady=("Notification" in window&&Notification.permission==="granted");
   const locationReady=window.hdLocationPermissionState==="granted";
   if(localStorage.getItem("hd-permission-welcome-dismissed")==="1"&&notificationReady&&locationReady)return;
-  if(!document.body.classList.contains("customer-authenticated"))return;
   modal.hidden=false;
   const n=document.getElementById("notification-permission-status");
   const l=document.getElementById("location-permission-status");
@@ -626,8 +625,11 @@ db.auth.onAuthStateChange((event,session)=>{
     else if(customerNotificationChannel){db.removeChannel(customerNotificationChannel);customerNotificationChannel=null;}
   }
 });
+// Show the permission choices on storefront launch, even before customer login completes.
+requestLocationOnOpen();
+showPermissionWelcome();
 // Keep the page locked until Supabase confirms a registered customer session.
-applyCustomerGate().then(signedIn=>{if(signedIn&&new URLSearchParams(location.search).get("tab")==="notifications")showCustomerTab("notifications");else if(signedIn)showPermissionWelcome();});
+applyCustomerGate().then(signedIn=>{if(signedIn&&new URLSearchParams(location.search).get("tab")==="notifications")showCustomerTab("notifications");else showPermissionWelcome();});
 async function requestCustomerPasswordReset(){
   const email=document.getElementById("account-email").value.trim().toLowerCase();
   if(!email||!document.getElementById("account-email").checkValidity()){customerAuthMessage("Enter your registered email first, then tap Forgot password.",true);return;}
