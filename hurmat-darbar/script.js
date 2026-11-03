@@ -350,6 +350,7 @@ async function load(){
   renderCats(a.data||[]);
   status.textContent=items.length+" menu items loaded · live restaurant prices";
   const search=document.getElementById("menu-search-input");if(search){search.oninput=()=>{query=search.value.toLowerCase().trim();render();};}
+  const searchTrigger=document.getElementById("menu-search-trigger");if(searchTrigger)searchTrigger.addEventListener("click",()=>{const input=document.getElementById("menu-search-input");input?.focus();input?.scrollIntoView({behavior:"smooth",block:"center"});});
   render();renderCart();checkoutState();resumeAvailability();loadCustomerProfile();loadMyOrders();if(window.hdOrdersTimer)clearInterval(window.hdOrdersTimer);window.hdOrdersTimer=setInterval(()=>{if(!document.hidden)loadMyOrders()},8000);
 }
 renderCart();load();if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
