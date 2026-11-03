@@ -1247,3 +1247,41 @@ body.customer-locked #my-account #customer-auth-form #customer-auth-submit{
 #tracking-form input{width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;background:#0e1b14;color:var(--cream);font:12px Manrope}
 .top{gap:12px}
 @media(max-width:650px){.header-notification{width:36px;height:36px}.top{gap:8px}.permission-panel{padding:23px 18px}.customer-bottom-nav button small{font-size:8px}}
+
+
+/* Premium guest-first storefront refresh */
+:root{--ink:#17251d;--muted:#758078;--cream:#f5f4ed;--paper:#fffefa;--gold:#c49a56;--line:#e6e9e1;--forest:#173d2c;--forest2:#24543c}
+body{background:var(--paper);color:var(--ink);font-family:Manrope,system-ui,sans-serif;padding-bottom:92px}
+.top{height:76px;background:rgba(255,254,250,.94);backdrop-filter:blur(18px);border-bottom:1px solid var(--line);box-shadow:0 5px 24px #17251d08}
+.brand-logo{border-radius:14px;object-fit:contain;filter:drop-shadow(0 5px 10px #173d2c22);animation:brandFloat 4s ease-in-out infinite}
+@keyframes brandFloat{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(-2deg)}}
+.logo span{color:var(--forest);font-weight:800;letter-spacing:1.7px}.logo small{color:var(--muted)}
+.top nav a{font-weight:700;color:#506258}.top nav a:hover{color:var(--forest2)}
+.cart-trigger,.top-cta{border-radius:999px}.cart-trigger{background:var(--forest);color:#fff;border:0;padding:12px 17px}
+.header-notification{color:var(--forest);border-color:var(--line);background:#fff}
+.menu,.customer-tools{padding:58px max(5vw,18px)}
+.section-head h2{font-family:'Playfair Display',serif;letter-spacing:-.6px;color:var(--forest)}
+.section-head h2 span,.visit h2 span{color:var(--gold)}
+.eyebrow,.service-kicker{color:#9a7948;letter-spacing:2px;font-weight:800}
+.menu-intro{color:var(--muted);max-width:560px}
+.chip{border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--forest);padding:10px 17px;font-weight:700}
+.chip.active,.chip:hover{background:var(--forest);color:#fff;border-color:var(--forest)}
+.menu-grid{gap:18px}
+.menu-card,.food-card,.service-card{border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:0 10px 35px #17251d08;overflow:hidden}
+.service-card{padding:25px}
+.btn.primary,.checkout-btn{background:var(--forest);border-radius:12px;color:#fff}
+.btn.primary:hover,.checkout-btn:hover{background:var(--forest2)}
+.customer-bottom-nav{position:fixed;z-index:80;left:50%;bottom:12px;transform:translateX(-50%);display:flex;justify-content:space-around;align-items:center;width:min(510px,calc(100% - 24px));padding:9px 8px calc(9px + env(safe-area-inset-bottom));border:1px solid #e5e9e1;border-radius:22px;background:rgba(255,254,250,.94);backdrop-filter:blur(22px);box-shadow:0 14px 45px #14271d24}
+.customer-bottom-nav[hidden]{display:none!important}
+.customer-bottom-nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;border:0;background:transparent;color:#7b887f;font:700 10px Manrope;cursor:pointer;padding:6px 2px;border-radius:14px}
+.customer-bottom-nav button span{font-size:21px;line-height:1.2}
+.customer-bottom-nav button.active{color:var(--forest);background:#edf3ed}
+.customer-bottom-nav button.active span{color:var(--gold)}
+#my-favorites[hidden],#my-orders[hidden],#my-account[hidden],#services[hidden],#menu[hidden],#visit[hidden],#customer-notifications[hidden]{display:none!important}
+.cart-panel{border-radius:24px 0 0 24px}
+.cart-head h2{font-family:'Playfair Display',serif}
+.permission-panel{border-radius:26px;background:#fffefa}
+.visit{background:var(--forest);border-radius:26px;margin:20px max(5vw,18px);padding:48px}
+.visit h2{font-family:'Playfair Display',serif}
+footer{background:#f0f2eb;border-top:1px solid var(--line);padding:32px max(5vw,18px);color:var(--muted)}
+@media(max-width:650px){.top{height:66px;padding:0 16px}.top nav{background:#fffefa;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 12px 35px #17251d18}.menu,.customer-tools{padding:38px 16px}.visit{margin:12px 16px;padding:30px 22px}.customer-bottom-nav{bottom:calc(8px + env(safe-area-inset-bottom))}.brand-logo{width:42px;height:42px}}
