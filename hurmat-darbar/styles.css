@@ -1673,3 +1673,19 @@ body{background:#fff;color:#211f28}
  .cart-head{background:#fff!important}
  .cart-summary{background:#fff!important}
 }
+
+/* Header controls and every cart state: explicit contrast on the light storefront */
+.top .cart-trigger{background:#fff0f5!important;color:#c92159!important;border:1px solid #f5bfd1!important;border-radius:999px;padding:10px 14px;font-weight:800}
+.top .cart-trigger b{background:#e8336d!important;color:#fff!important;border-radius:50%;padding:3px 7px}
+.top .top-cta{color:#c92159!important;border-color:#e8336d!important}
+.top .header-notification,.top .hamb{color:#211f28!important;background:#fff0f5!important}
+.cart-panel .cart-empty,.cart-panel .cart-empty h3,.cart-panel .cart-empty p{color:#211f28!important}
+.cart-panel .cart-empty-mark{color:#e8336d!important;background:#fff0f5!important}
+.cart-panel .cart-browse{background:#e8336d!important;color:#fff!important}
+.cart-panel .cart-item-thumb{background:#fff0f5!important;color:#e8336d!important}
+.cart-panel .cart-item-name,.cart-panel .cart-line-total,.cart-panel .cart-item-info strong{color:#211f28!important}
+.cart-panel .cart-item-variant{color:#777482!important}
+.cart-panel .qty-control{background:#fff0f5!important;border-color:#f3c7d6!important}
+.cart-panel .qty-control button{color:#c92159!important}
+.cart-panel .cart-remove{color:#c92159!important}
+.cart-panel .cart-summary[hidden]{display:none!important}
