@@ -507,28 +507,34 @@ function updateCustomerDashboard(guestReady){
   showCustomerTab(activeTab);
 }
 function showCustomerTab(tab){
+  const panel=document.getElementById("cart-panel");
   if(tab==="bag"||tab==="cart"){
     toggleCart(true);
     document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab==="bag"));
     return;
   }
   toggleCart(false);
-  const homeHero=document.getElementById("home-hero"),homeDiscovery=document.getElementById("home-discovery");
-  const menu=document.getElementById("menu"),account=document.getElementById("my-account"),orders=document.getElementById("my-orders"),visit=document.getElementById("visit"),notifications=document.getElementById("customer-notifications"),favorites=document.getElementById("my-favorites");
-  const auth=document.getElementById("customer-auth-form"),profile=document.getElementById("customer-profile-card");
-  if(auth)auth.hidden=true;
+  const homeHero=document.getElementById("home-hero");
+  const homeDiscovery=document.getElementById("home-discovery");
+  const menu=document.getElementById("menu");
+  const account=document.getElementById("my-account");
+  const orders=document.getElementById("my-orders");
+  const visit=document.getElementById("visit");
+  const notifications=document.getElementById("customer-notifications");
+  const favorites=document.getElementById("my-favorites");
+  const profile=document.getElementById("customer-profile-card");
+  const auth=document.getElementById("customer-auth-form");
   if(homeHero)homeHero.hidden=tab!=="home";
   if(homeDiscovery)homeDiscovery.hidden=tab!=="home";
   if(menu)menu.hidden=tab!=="menu";
-  if(profile)profile.hidden=tab!=="profile";
   if(account)account.hidden=tab!=="profile";
+  if(profile)profile.hidden=tab!=="profile";
+  if(auth)auth.hidden=true;
   if(orders)orders.hidden=tab!=="orders";
   if(visit)visit.hidden=true;
-  if(favorites)favorites.hidden=true;
   if(notifications)notifications.hidden=tab!=="notifications";
-  if(tab==="orders"&&window.hdSelectTrackView){
-    window.hdSelectTrackView(false);
-  }
+  if(favorites)favorites.hidden=true;
+  if(tab==="orders"&&window.hdSelectTrackView)window.hdSelectTrackView(false);
   document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab===tab));
   window.scrollTo({top:0,behavior:"smooth"});
 }
