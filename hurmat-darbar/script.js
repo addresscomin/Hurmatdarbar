@@ -527,7 +527,7 @@ function showCustomerTab(tab){
   if(favorites)favorites.hidden=true;
   if(notifications)notifications.hidden=tab!=="notifications";
   if(tab==="orders"&&window.hdSelectTrackView){
-    window.hdSelectTrackView(window.hdTrackTabSelected===true);
+    window.hdSelectTrackView(false);
   }
   document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab===tab));
   window.scrollTo({top:0,behavior:"smooth"});
