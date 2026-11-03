@@ -348,6 +348,7 @@ async function load(){
   cart=cart.flatMap(line=>{const item=items.find(x=>x.id===line.item_id&&x.available!==false),variant=item?.menu_variants.find(v=>v.id===line.variant_id);return item&&variant?[{...line,key:cartKey(item.id,variant.id),name:item.name,label:variant.label,price:Number(variant.price),qty:Math.max(1,Math.min(50,Number(line.qty)||1))}]:[]});
   localStorage.setItem("hd-cart",JSON.stringify(cart));cart.forEach(line=>{selectedVariants[line.item_id]=line.variant_id});
   renderCats(a.data||[]);
+  renderHomeDiscovery(a.data||[]);
   status.textContent=items.length+" menu items loaded · live restaurant prices";
   const search=document.getElementById("menu-search-input");if(search){search.oninput=()=>{query=search.value.toLowerCase().trim();render();};}
   const searchTrigger=document.getElementById("menu-search-trigger");if(searchTrigger)searchTrigger.addEventListener("click",()=>{const input=document.getElementById("menu-search-input");input?.focus();input?.scrollIntoView({behavior:"smooth",block:"center"});});
@@ -907,3 +908,53 @@ if(copyTracking)copyTracking.onclick=async()=>{
  catch{window.prompt("Copy your tracking reference:",value);}
 };
 if(successModal)successModal.addEventListener("click",e=>{if(e.target===successModal)successModal.hidden=true;});
+
+
+/* Home discovery: uses the same live menu records, images, variants and add-to-cart flow. */
+function renderHomeDiscovery(categories){
+  const categoryRoot=document.getElementById("home-category-row");
+  const popularRoot=document.getElementById("home-popular-grid");
+  if(!categoryRoot||!popularRoot)return;
+  categoryRoot.replaceChildren();
+  const usableItems=items.filter(item=>item.available!==false&&item.menu_variants?.length);
+  categories.forEach(category=>{
+    const representative=usableItems.find(item=>item.category_id===category.id&&foodImage(item));
+    const card=el("button","home-category-card");
+    card.type="button";
+    const media=el("span","home-category-image");
+    if(representative){
+      const img=el("img","");img.src=foodImage(representative);img.alt=category.name;img.loading="lazy";
+      img.onerror=()=>{img.remove();media.classList.add("image-fallback");media.textContent=category.name;};
+      media.append(img);
+    }else{media.classList.add("image-fallback");media.textContent=category.name;}
+    card.append(media,el("strong","home-category-name",category.name));
+    card.addEventListener("click",()=>{
+      cat=category.id;
+      cats.querySelectorAll("[data-cat]").forEach(button=>button.classList.toggle("active",button.dataset.cat===cat));
+      render();showCustomerTab("menu");
+    });
+    categoryRoot.append(card);
+  });
+  popularRoot.replaceChildren();
+  const popular=usableItems.filter(item=>foodImage(item)).slice(0,3);
+  if(!popular.length){popularRoot.append(el("p","home-popular-empty","Popular dishes will appear here as menu photos become available."));}
+  popular.forEach(item=>{
+    const card=el("article","home-popular-card"),photo=el("div","home-popular-photo"),img=el("img","");
+    img.src=foodImage(item);img.alt=item.name;img.loading="lazy";
+    img.onerror=()=>{img.remove();photo.classList.add("image-fallback");photo.textContent=item.name;};
+    photo.append(img);
+    const details=el("div","home-popular-details");
+    details.append(el("strong","home-popular-name",item.name));
+    details.append(el("span","home-popular-price",money(item.menu_variants[0].price)));
+    const add=el("button","home-popular-add","Add");
+    add.type="button";add.addEventListener("click",()=>addItem(item,item.menu_variants[0],false));
+    details.append(add);card.append(photo,details);popularRoot.append(card);
+  });
+}
+const homeViewAll=document.getElementById("home-view-all");
+if(homeViewAll)homeViewAll.addEventListener("click",()=>{
+  cat="all";
+  cats.querySelectorAll("[data-cat]").forEach(button=>button.classList.toggle("active",button.dataset.cat==="all"));
+  const search=document.getElementById("menu-search-input");if(search){search.value="";query="";}
+  render();showCustomerTab("menu");
+});
