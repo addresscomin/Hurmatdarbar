@@ -1735,3 +1735,11 @@ body{background:#fff;color:#211f28}
  .home-popular-details{padding:10px}
  .home-popular-name{font-size:11px}
 }
+
+/* Customer navigation and section switching: keep the tab bar above the cart scrim. */
+.customer-bottom-nav:not([hidden]){z-index:10050!important;pointer-events:auto!important}
+.cart-panel{z-index:9000!important}
+.cart-scrim{z-index:8990!important}
+#home-hero[hidden],#home-discovery[hidden]{display:none!important}
+.menu-search-trigger{display:none!important}
+#profile-address{min-height:96px;resize:vertical}
