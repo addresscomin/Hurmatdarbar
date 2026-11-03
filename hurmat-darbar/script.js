@@ -503,7 +503,7 @@ function updateCustomerDashboard(guestReady){
   const auth=document.getElementById("customer-auth-form");
   if(nav)nav.hidden=false;
   if(auth)auth.hidden=true;
-  const activeTab=document.querySelector("[data-customer-tab].active")?.dataset.customerTab||"menu";
+  const activeTab=document.querySelector("[data-customer-tab].active")?.dataset.customerTab||"home";
   showCustomerTab(activeTab);
 }
 function showCustomerTab(tab){
@@ -512,22 +512,24 @@ function showCustomerTab(tab){
     document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab==="bag"));
     return;
   }
-  if(tab==="track")tab="orders";
   toggleCart(false);
+  const homeHero=document.getElementById("home-hero"),homeDiscovery=document.getElementById("home-discovery");
   const menu=document.getElementById("menu"),account=document.getElementById("my-account"),orders=document.getElementById("my-orders"),visit=document.getElementById("visit"),notifications=document.getElementById("customer-notifications"),favorites=document.getElementById("my-favorites");
   const auth=document.getElementById("customer-auth-form"),profile=document.getElementById("customer-profile-card");
   if(auth)auth.hidden=true;
-  if(profile)profile.hidden=tab!=="profile";
+  if(homeHero)homeHero.hidden=tab!=="home";
+  if(homeDiscovery)homeDiscovery.hidden=tab!=="home";
   if(menu)menu.hidden=tab!=="menu";
+  if(profile)profile.hidden=tab!=="profile";
   if(account)account.hidden=tab!=="profile";
   if(orders)orders.hidden=tab!=="orders";
   if(visit)visit.hidden=true;
   if(favorites)favorites.hidden=true;
   if(notifications)notifications.hidden=tab!=="notifications";
   if(tab==="orders"&&window.hdSelectTrackView){
-    window.hdSelectTrackView(document.activeElement?.dataset?.customerTab==="track");
+    window.hdSelectTrackView(window.hdTrackTabSelected===true);
   }
-  document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab===tab||(tab==="orders"&&b.dataset.customerTab==="track"&&window.hdTrackTabSelected)));
+  document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab===tab));
   window.scrollTo({top:0,behavior:"smooth"});
 }
 const headerNotifications=document.getElementById("header-notifications");
@@ -544,11 +546,11 @@ function selectOrdersView(view){
   const mine=document.getElementById("orders-view-mine"),track=document.getElementById("orders-view-track");
   if(mine)mine.hidden=view!=="mine";if(track)track.hidden=view!=="track";
   window.hdTrackTabSelected=view==="track";
-  document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab===(view==="track"?"track":"orders")));
+  document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab==="orders"));
 }
 window.hdSelectTrackView=forceTrack=>selectOrdersView(forceTrack?"track":"mine");
 if(ordersTabs)ordersTabs.addEventListener("click",event=>{const button=event.target.closest("[data-orders-view]");if(button)selectOrdersView(button.dataset.ordersView);});
-document.querySelectorAll("[data-customer-tab]").forEach(button=>button.addEventListener("click",()=>{if(button.dataset.customerTab==="track")selectOrdersView("track");else if(button.dataset.customerTab==="orders")selectOrdersView("mine");}));
+
 if(customerNav)customerNav.addEventListener("click",e=>{const b=e.target.closest("[data-customer-tab]");if(b)showCustomerTab(b.dataset.customerTab);});
 const reservationPanel=document.getElementById("reservation-menu-panel");
 const closeReservations=document.getElementById("close-reservations");
