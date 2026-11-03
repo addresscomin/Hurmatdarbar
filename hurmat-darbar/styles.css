@@ -1743,3 +1743,11 @@ body{background:#fff;color:#211f28}
 #home-hero[hidden],#home-discovery[hidden]{display:none!important}
 .menu-search-trigger{display:none!important}
 #profile-address{min-height:96px;resize:vertical}
+
+
+/* Correct customer tab layout: restore Home, keep Track inside My Orders. */
+#home-hero[hidden],#home-discovery[hidden]{display:none!important}
+#home-hero:not([hidden]),#home-discovery:not([hidden]){display:flex}
+#home-discovery:not([hidden]){display:block}
+#menu[hidden],#my-account[hidden],#my-orders[hidden],#customer-notifications[hidden]{display:none!important}
+.customer-bottom-nav:not([hidden]){grid-template-columns:repeat(5,minmax(0,1fr))!important}
