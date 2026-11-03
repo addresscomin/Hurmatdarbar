@@ -503,7 +503,8 @@ function updateCustomerDashboard(guestReady){
   const auth=document.getElementById("customer-auth-form");
   if(nav)nav.hidden=false;
   if(auth)auth.hidden=true;
-  showCustomerTab("menu");
+  const activeTab=document.querySelector("[data-customer-tab].active")?.dataset.customerTab||"menu";
+  showCustomerTab(activeTab);
 }
 function showCustomerTab(tab){
   if(tab==="bag"||tab==="cart"){
