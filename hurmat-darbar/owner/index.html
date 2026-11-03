@@ -666,6 +666,27 @@ body:has(.auth-card) .auth-card:after{
 </div>
 <nav id="nav"></nav>
 <script>
+/* Independent owner permission prompt; it does not depend on admin.js or Supabase boot. */
+(function(){
+  var overlay=document.createElement("div");
+  overlay.id="owner-start-permission";
+  overlay.style.cssText="position:fixed;inset:0;z-index:10050;display:grid;place-items:center;padding:18px;background:rgba(3,18,12,.78);backdrop-filter:blur(8px)";
+  overlay.innerHTML='<section style="width:min(440px,100%);padding:24px;border-radius:20px;background:#f8faf5;color:#173b2a;box-shadow:0 20px 70px #0008"><h2 style="font:800 20px system-ui;margin:0 0 10px">Hurmat Owner notifications</h2><p style="font:14px/1.6 system-ui;color:#53645a;margin:0 0 16px">Allow notifications on this device. The owner dashboard will then finish setting up order-alert delivery.</p><button id="owner-start-allow" style="width:100%;padding:13px;border:0;border-radius:10px;background:#173b2a;color:white;font-weight:800">Allow notifications</button><button id="owner-start-later" style="width:100%;padding:12px;margin-top:8px;border:1px solid #ccd6ce;border-radius:10px;background:transparent;color:#173b2a;font-weight:700">Continue to dashboard</button><small id="owner-start-status" style="display:block;margin-top:10px;color:#68756c;font:12px/1.5 system-ui"></small></section>';
+  document.body.append(overlay);
+  var allow=document.getElementById("owner-start-allow");
+  var status=document.getElementById("owner-start-status");
+  if(!("Notification" in window)){allow.disabled=true;status.textContent="Notifications are not supported in this browser.";}
+  else if(Notification.permission==="granted"){overlay.remove();}
+  else if(Notification.permission==="denied"){allow.disabled=true;status.textContent="Notifications are blocked. Change this site's Notifications permission in Chrome settings.";}
+  allow.onclick=async function(){
+    if(!("Notification" in window))return;
+    allow.disabled=true;status.textContent="Waiting for browser permission…";
+    try{var p=await Notification.requestPermission();status.textContent=p==="granted"?"Permission granted. Owner dashboard will configure order alerts.":p==="denied"?"Blocked. Allow Notifications in Chrome site settings.":"Permission not granted.";if(p==="granted")overlay.remove();else allow.disabled=false;}catch(e){status.textContent="Could not request permission. Check browser site settings.";allow.disabled=false;}
+  };
+  document.getElementById("owner-start-later").onclick=function(){overlay.remove();};
+})();
+</script>
+<script>
 (async function(){
   const status=document.getElementById('boot-status');
   const detail=document.getElementById('boot-detail');
