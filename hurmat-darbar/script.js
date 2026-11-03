@@ -505,19 +505,19 @@ function updateCustomerDashboard(guestReady){
   if(!document.querySelector("[data-customer-tab].active"))showCustomerTab("menu");
 }
 function showCustomerTab(tab){
-  const menu=document.getElementById("menu"), services=document.getElementById("services"), account=document.getElementById("my-account"), orders=document.getElementById("my-orders"), visit=document.getElementById("visit"), notifications=document.getElementById("customer-notifications");
-  const reservations=tab==="reservations";
-  const auth=document.getElementById("customer-auth-form"), profile=document.getElementById("customer-profile-card");
-  if(auth)auth.hidden=document.body.classList.contains("customer-authenticated");
+  const menu=document.getElementById("menu"),services=document.getElementById("services"),account=document.getElementById("my-account"),orders=document.getElementById("my-orders"),visit=document.getElementById("visit"),notifications=document.getElementById("customer-notifications"),favorites=document.getElementById("my-favorites");
+  const auth=document.getElementById("customer-auth-form"),profile=document.getElementById("customer-profile-card");
+  if(auth)auth.hidden=true;
   if(profile)profile.hidden=tab!=="profile";
   if(menu)menu.hidden=tab!=="menu";
-  if(services)services.hidden=tab!=="reservations";
+  if(services)services.hidden=tab!=="orders";
   if(account)account.hidden=tab!=="profile";
   if(orders)orders.hidden=tab!=="orders";
   if(visit)visit.hidden=tab!=="menu";
-  if(notifications)notifications.hidden=tab!=="notifications";
-  if(tab==="notifications")loadCustomerNotifications();
-  if(reservations&&services)services.scrollTop=0;
+  if(favorites)favorites.hidden=tab!=="favorites";
+  if(notifications)notifications.hidden=tab!=="profile";
+  if(tab==="profile")loadCustomerNotifications();
+  if(tab==="orders"&&services)services.hidden=false;
   document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab===tab));
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -537,7 +537,7 @@ async function applyCustomerGate(){
     const session=await ensureGuestSession();
     const user=session.user;
     const guestReady=!!user;
-    document.body.classList.toggle("customer-locked",false);
+    document.body.classList.remove("customer-locked");
     document.body.classList.toggle("customer-authenticated",guestReady);
     updateCustomerDashboard(guestReady);
     return guestReady;
@@ -561,7 +561,7 @@ function resetCustomerOrders(message){
 db.auth.onAuthStateChange((event,session)=>{
   const signedIn=!!session?.user;
   const nextUserId=signedIn?session.user.id:null;
-  document.body.classList.toggle("customer-locked",!signedIn);
+  document.body.classList.remove("customer-locked");
   document.body.classList.toggle("customer-authenticated",signedIn);
   updateCustomerDashboard(signedIn);
   if(nextUserId&&!activeCustomerUserId)setTimeout(showPermissionWelcome,250);
