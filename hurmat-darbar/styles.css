@@ -1751,3 +1751,22 @@ body{background:#fff;color:#211f28}
 #home-discovery:not([hidden]){display:block}
 #menu[hidden],#my-account[hidden],#my-orders[hidden],#customer-notifications[hidden]{display:none!important}
 .customer-bottom-nav:not([hidden]){grid-template-columns:repeat(5,minmax(0,1fr))!important}
+
+
+/* Strict visibility contract: CSS component display rules must never override hidden. */
+main#home > section[hidden],
+#home-hero[hidden],#home-discovery[hidden],#menu[hidden],
+#my-account[hidden],#customer-profile-card[hidden],#customer-auth-form[hidden],
+#my-orders[hidden],#customer-notifications[hidden],#my-favorites[hidden],
+#orders-view-mine[hidden],#orders-view-track[hidden]{
+  display:none!important;
+}
+/* Keep the five-tab navigation above the cart sheet so Bag can be exited without X. */
+.customer-bottom-nav:not([hidden]){
+  position:fixed!important;
+  z-index:2147483000!important;
+  pointer-events:auto!important;
+}
+.customer-bottom-nav:not([hidden]) button{pointer-events:auto!important;position:relative!important;z-index:1!important}
+#cart-scrim{z-index:2147482000!important}
+#cart-panel{z-index:2147482500!important;padding-bottom:100px!important}
