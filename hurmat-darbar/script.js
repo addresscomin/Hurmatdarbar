@@ -340,15 +340,15 @@ async function load(){
     db.from("restaurant_settings").select("name,is_open,location_verified,lat,lng,delivery_fee,min_order,cod_enabled,upi_enabled,upi_id").eq("id",1).single()
   ]);
   if(a.error||b.error){status.textContent="Menu unavailable. Please call +91 97971 51590.";return;}
-  if(c.error){status.textContent="Menu is live, but checkout settings are unavailable. Please call the restaurant.";return;}
-  restaurantSettings=c.data;
-  const openBadge=document.getElementById("restaurant-open-state");
-  if(openBadge){openBadge.textContent=restaurantSettings.is_open?"● Accepting orders":"● Orders paused";openBadge.classList.toggle("closed",!restaurantSettings.is_open);}
   items=(b.data||[]).filter(x=>!x.needs_verification).map(x=>({...x,category_name:x.menu_categories?.name||"",menu_variants:(x.menu_variants||[]).filter(v=>v.active!==false&&v.price!==null).sort((p,q)=>p.sort_order-q.sort_order)})).filter(x=>x.menu_variants.length);
   cart=cart.flatMap(line=>{const item=items.find(x=>x.id===line.item_id&&x.available!==false),variant=item?.menu_variants.find(v=>v.id===line.variant_id);return item&&variant?[{...line,key:cartKey(item.id,variant.id),name:item.name,label:variant.label,price:Number(variant.price),qty:Math.max(1,Math.min(50,Number(line.qty)||1))}]:[]});
   localStorage.setItem("hd-cart",JSON.stringify(cart));cart.forEach(line=>{selectedVariants[line.item_id]=line.variant_id});
   renderCats(a.data||[]);
   renderHomeDiscovery(a.data||[]);
+  if(c.error){status.textContent=items.length+" menu items loaded. Checkout settings are temporarily unavailable.";render();renderCart();return;}
+  restaurantSettings=c.data;
+  const openBadge=document.getElementById("restaurant-open-state");
+  if(openBadge){openBadge.textContent=restaurantSettings.is_open?"● Accepting orders":"● Orders paused";openBadge.classList.toggle("closed",!restaurantSettings.is_open);}
   status.textContent=items.length+" menu items loaded · live restaurant prices";
   const search=document.getElementById("menu-search-input");if(search){search.oninput=()=>{query=search.value.toLowerCase().trim();render();};}
   const searchTrigger=document.getElementById("menu-search-trigger");if(searchTrigger)searchTrigger.addEventListener("click",()=>{const input=document.getElementById("menu-search-input");input?.focus();input?.scrollIntoView({behavior:"smooth",block:"center"});});
@@ -951,6 +951,8 @@ function renderHomeDiscovery(categories){
     details.append(add);card.append(photo,details);popularRoot.append(card);
   });
 }
+const heroOrderNow=document.getElementById("hero-order-now");
+if(heroOrderNow)heroOrderNow.addEventListener("click",()=>showCustomerTab("menu"));
 const homeViewAll=document.getElementById("home-view-all");
 if(homeViewAll)homeViewAll.addEventListener("click",()=>{
   cat="all";
