@@ -77,6 +77,7 @@ function renderCart(){
   }
   const summary=document.querySelector(".cart-summary");if(summary)summary.hidden=!cart.length;
   document.getElementById("cart-count").textContent=count;
+  const bottomBagCount=document.getElementById("bottom-bag-count");if(bottomBagCount)bottomBagCount.textContent=count?String(count):"0";
   document.getElementById("cart-subtotal").textContent=money(subtotal);
   document.getElementById("cart-total").textContent=money(subtotal+(cart.length?Number(restaurantSettings?.delivery_fee??30):0));
   const mobileCount=document.getElementById("mobile-cart-count"),mobileTotal=document.getElementById("mobile-cart-total");
@@ -124,9 +125,10 @@ function clearAvailability(message){
 async function ensureGuestSession(){
   const {data:{session},error}=await db.auth.getSession();
   if(error)throw new Error("Could not verify your guest session. Please refresh the page.");
-  if(session?.user)return session;
+  if(session?.user){localStorage.setItem("hd-guest-id",session.user.id);return session;}
   const {data,error:signInError}=await db.auth.signInAnonymously();
   if(signInError||!data?.session||!data?.user)throw new Error("Guest session could not start. Enable Anonymous Sign-Ins in Supabase Auth settings and refresh.");
+  localStorage.setItem("hd-guest-id",data.user.id);
   return data.session;
 }
 async function callRestaurantApi(method,query,body){
@@ -347,8 +349,8 @@ async function load(){
   localStorage.setItem("hd-cart",JSON.stringify(cart));cart.forEach(line=>{selectedVariants[line.item_id]=line.variant_id});
   renderCats(a.data||[]);
   status.textContent=items.length+" menu items loaded · live restaurant prices";
-  const search=el("input","menu-search");search.placeholder="Search dishes, drinks and more…";search.oninput=()=>{query=search.value.toLowerCase().trim();render();};
-  const tools=el("div","menu-tools");tools.append(search);cats.after(tools);render();renderCart();checkoutState();resumeAvailability();loadCustomerProfile();loadMyOrders();if(window.hdOrdersTimer)clearInterval(window.hdOrdersTimer);window.hdOrdersTimer=setInterval(()=>{if(!document.hidden)loadMyOrders()},8000);
+  const search=document.getElementById("menu-search-input");if(search){search.oninput=()=>{query=search.value.toLowerCase().trim();render();};}
+  render();renderCart();checkoutState();resumeAvailability();loadCustomerProfile();loadMyOrders();if(window.hdOrdersTimer)clearInterval(window.hdOrdersTimer);window.hdOrdersTimer=setInterval(()=>{if(!document.hidden)loadMyOrders()},8000);
 }
 renderCart();load();if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
 const reservationForm=document.getElementById("reservation-form");
@@ -502,19 +504,20 @@ function updateCustomerDashboard(guestReady){
   if(nav)nav.hidden=false;
   if(auth)auth.hidden=true;
   if(profile)profile.hidden=false;
-  if(!document.querySelector("[data-customer-tab].active"))showCustomerTab("menu");
+  if(!document.querySelector("[data-customer-tab].active"))showCustomerTab("home");
 }
 function showCustomerTab(tab){
-  if(tab==="cart"){toggleCart(true);document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab==="cart"));return;}
-  const menu=document.getElementById("menu"),account=document.getElementById("my-account"),orders=document.getElementById("my-orders"),visit=document.getElementById("visit"),notifications=document.getElementById("customer-notifications"),favorites=document.getElementById("my-favorites");
+  if(tab==="bag"||tab==="cart"){toggleCart(true);document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab==="bag"));return;}
+  const menu=document.getElementById("menu"),account=document.getElementById("my-account"),orders=document.getElementById("my-orders"),visit=document.getElementById("visit"),notifications=document.getElementById("customer-notifications"),favorites=document.getElementById("my-favorites"),hero=document.getElementById("home-hero");
   const auth=document.getElementById("customer-auth-form"),profile=document.getElementById("customer-profile-card");
   if(auth)auth.hidden=true;
   if(profile)profile.hidden=tab!=="profile";
   if(menu)menu.hidden=tab!=="menu";
+  if(hero)hero.hidden=tab!=="home";
   if(account)account.hidden=tab!=="profile";
   if(orders)orders.hidden=tab!=="orders";
-  if(visit)visit.hidden=tab!=="menu";
-  if(favorites)favorites.hidden=tab!=="favorites";
+  if(visit)visit.hidden=tab!=="home";
+  if(favorites)favorites.hidden=true;
   if(notifications)notifications.hidden=true;
 
   document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab===tab));
@@ -528,6 +531,8 @@ const disableAlertsButton=document.getElementById("disable-customer-alerts");
 if(disableAlertsButton)disableAlertsButton.addEventListener("click",disableCustomerAlerts);
 refreshCustomerPushControls();
 const customerNav=document.getElementById("customer-bottom-nav");
+const ordersTabs=document.querySelector(".orders-tabs");
+if(ordersTabs)ordersTabs.addEventListener("click",event=>{const button=event.target.closest("[data-orders-view]");if(!button)return;const view=button.dataset.ordersView;document.querySelectorAll("[data-orders-view]").forEach(b=>b.classList.toggle("active",b===button));document.getElementById("orders-view-mine").hidden=view!=="mine";document.getElementById("orders-view-track").hidden=view!=="track";});
 if(customerNav)customerNav.addEventListener("click",e=>{const b=e.target.closest("[data-customer-tab]");if(b)showCustomerTab(b.dataset.customerTab);});
 const reservationPanel=document.getElementById("reservation-menu-panel");
 const closeReservations=document.getElementById("close-reservations");
@@ -686,7 +691,8 @@ async function loadCustomerProfile(){
   if(error){if(summary)summary.textContent="Profile could not be loaded: "+error.message;return;}
   document.getElementById("profile-name").value=data?.full_name||user.user_metadata?.full_name||"";
   document.getElementById("profile-phone").value=data?.phone||user.user_metadata?.phone||"";
-  summary.textContent="Guest ID: "+user.id+" · Your profile and orders are saved to this browser session.";
+  localStorage.setItem("hd-guest-id",user.id);
+  summary.textContent="Guest ID: "+user.id;
   const checkoutName=document.getElementById("customer-name"),checkoutPhone=document.getElementById("customer-phone");
   if(checkoutName&&!checkoutName.value)checkoutName.value=data?.full_name||"";
   if(checkoutPhone&&!checkoutPhone.value)checkoutPhone.value=data?.phone||"";
