@@ -462,14 +462,34 @@ function startCustomerNotificationFeed(userId){
 
 function showPermissionWelcome(){
   const modal=document.getElementById("permission-welcome");
-  if(!modal||localStorage.getItem("hd-permission-welcome-dismissed")==="1")return;
+  if(!modal)return;
+  const notificationReady=("Notification" in window&&Notification.permission==="granted");
+  const locationReady=window.hdLocationPermissionState==="granted";
+  if(localStorage.getItem("hd-permission-welcome-dismissed")==="1"&&notificationReady&&locationReady)return;
   if(!document.body.classList.contains("customer-authenticated"))return;
   modal.hidden=false;
   const n=document.getElementById("notification-permission-status");
   const l=document.getElementById("location-permission-status");
-  if("Notification" in window&&Notification.permission==="granted")n.textContent="Notifications are already enabled on this device.";
-  else if("Notification" in window&&Notification.permission==="denied")n.textContent="Notifications are blocked in browser settings. You can still place orders.";
-  if(!navigator.geolocation)l.textContent="Location is not supported by this browser.";
+  if(n&&"Notification" in window&&Notification.permission==="granted")n.textContent="Notifications are already enabled on this device.";
+  else if(n&&"Notification" in window&&Notification.permission==="denied")n.textContent="Notifications are blocked in browser settings. Open Chrome site settings to allow them.";
+  if(l&&!navigator.geolocation)l.textContent="Location is not supported by this browser.";
+  else if(l&&window.hdLocationPermissionState==="granted")l.textContent="Location permission is enabled on this device.";
+  else if(l&&window.hdLocationPermissionState==="denied")l.textContent="Location is blocked. Allow it in Chrome site settings, then reload this website.";
+}
+function requestLocationOnOpen(){
+  if(!navigator.geolocation){window.hdLocationPermissionState="unsupported";return;}
+  const status=document.getElementById("location-permission-status");
+  if(status)status.textContent="Requesting location permission for delivery coverage…";
+  navigator.geolocation.getCurrentPosition(position=>{
+    window.hdLocationPermissionState="granted";
+    window.hdCustomerPosition={lat:position.coords.latitude,lng:position.coords.longitude};
+    if(status)status.textContent="Location enabled. Delivery coverage can now be checked.";
+    const button=document.getElementById("welcome-enable-location");
+    if(button){button.textContent="Location allowed ✓";button.disabled=true;}
+  },error=>{
+    window.hdLocationPermissionState=error.code===1?"denied":"unavailable";
+    if(status)status.textContent=error.code===1?"Location was blocked. Allow it in browser site settings, then reload.":"Location not available yet. Check device location and tap Share my location.";
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
 }
 function dismissPermissionWelcome(){
   const modal=document.getElementById("permission-welcome");
@@ -573,6 +593,7 @@ async function applyCustomerGate(){
     document.body.classList.remove("customer-locked");
     document.body.classList.toggle("customer-authenticated",guestReady);
     updateCustomerDashboard(guestReady);
+    if(guestReady)requestLocationOnOpen();
     return guestReady;
   }catch(error){
     document.body.classList.remove("customer-locked");
