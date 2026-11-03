@@ -1411,3 +1411,19 @@ body{background:radial-gradient(ellipse at 8% 0%,#d7efdf 0,transparent 42%),radi
 .reservation-menu-link{border:0;background:transparent;color:inherit;font:inherit;padding:12px 14px;cursor:pointer}
 #customer-notifications{display:none!important}
 #my-favorites{display:none!important}
+
+/* Focused mobile navigation and single-search cleanup */
+#services{display:block!important}
+.customer-bottom-nav{display:flex;grid-template-columns:repeat(5,minmax(0,1fr))}
+.customer-bottom-nav button{flex:1;min-width:0}
+.customer-bottom-nav button small{display:flex;align-items:center;justify-content:center;gap:4px}
+.bottom-bag-count{display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:#17643e;color:#fff;font-size:9px}
+.orders-tabs{display:flex;gap:8px;margin:18px 0 16px;padding:5px;background:#ffffff91;border:1px solid #ffffffc9;border-radius:14px;max-width:520px}
+.orders-tab{flex:1;border:0;border-radius:10px;padding:12px 14px;background:transparent;color:#41634e;font:700 12px Manrope,sans-serif;cursor:pointer}
+.orders-tab.active{background:linear-gradient(135deg,#17643e,#29945b);color:#fff;box-shadow:0 6px 18px #17643e22}
+.orders-view[hidden]{display:none!important}
+.categories{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;padding:4px 1px 10px}
+.categories::-webkit-scrollbar{display:none}
+.categories .chip{flex:0 0 auto}
+#menu-search-input{width:100%}
+@media(max-width:650px){.customer-bottom-nav{position:fixed;left:12px;right:12px;bottom:max(10px,env(safe-area-inset-bottom));z-index:80;display:flex;justify-content:space-around;padding:8px 6px;border-radius:20px}.customer-bottom-nav button{gap:3px;padding:7px 2px}.customer-bottom-nav button span{font-size:19px}.customer-bottom-nav button small{font-size:9px}.orders-tabs{width:100%}}
