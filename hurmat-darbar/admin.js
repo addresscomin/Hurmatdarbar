@@ -205,7 +205,7 @@ function availabilityRequestCard(r){
   const items=(r.items_snapshot||[]).map(i=>esc(i.qty)+" × "+esc(i.item_name)+" ("+esc(i.variant_label)+") · "+money(i.line_total)).join("<br>");
   const distance=r.distance_m==null?"Restaurant map pin not verified":(Number(r.distance_m).toLocaleString("en-IN")+" m · "+(r.within_radius?"inside configured radius":"outside configured radius"));
   const pending=r.status==="pending";
-  const canApprove=pending&&r.within_radius===true&&ownerPushReady;
+  const canApprove=pending&&r.within_radius===true;
   return '<article class="card" style="margin:10px 0"><div class="row"><b>Delivery check · '+esc(r.customer_name)+'</b><span class="tag '+(r.status==="approved"?"s-ready":r.status==="rejected"||r.status==="expired"?"cancelled":"s-new")+'">'+esc(r.status.toUpperCase())+'</span></div>'+
     '<p class="mute" style="margin:8px 0">'+esc(r.customer_phone)+' · '+new Date(r.created_at).toLocaleString()+'</p>'+
     '<p class="mute">'+esc(r.address_text)+'</p><p class="mute">Distance: '+esc(distance)+'</p>'+
