@@ -1394,3 +1394,20 @@ body{background:radial-gradient(ellipse at 8% 0%,#d7efdf 0,transparent 42%),radi
 .customer-bottom-nav button[data-customer-tab="cart"].active{background:linear-gradient(135deg,#17643e,#29945b)!important;color:#fff!important}
 .customer-tools,.cart-panel,.permission-panel{background:#fafffb}
 @media(max-width:650px){.top{background:rgba(247,252,248,.78)!important}.home-hero{box-shadow:0 15px 38px #174c2a20}.menu-search{width:100%}}
+
+
+/* Section isolation: each customer area owns its own content */
+#my-account,#my-orders,#menu,#visit{width:100%}
+#my-account .service-grid{display:block;max-width:720px}
+#my-account .service-card{width:100%;max-width:720px}
+#my-orders .tracking-card,#my-orders .my-orders-list{max-width:900px}
+#my-orders .orders-reservations-heading,#my-orders #services{display:none!important}
+#services{display:none!important}
+.reservation-menu-panel{position:fixed;inset:0;z-index:120;background:linear-gradient(145deg,#063f30,#0d684b);overflow:auto;padding:24px}
+.reservation-menu-inner{max-width:900px;margin:40px auto;background:rgba(255,255,255,.10);backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.18);border-radius:24px;padding:24px;color:#fff}
+.reservation-menu-panel .service-card{max-width:620px;margin:auto;background:rgba(255,255,255,.94);color:#18352b}
+.reservation-menu-panel .section-head{display:flex;justify-content:space-between;align-items:center}
+.reservation-menu-panel[hidden]{display:none!important}
+.reservation-menu-link{border:0;background:transparent;color:inherit;font:inherit;padding:12px 14px;cursor:pointer}
+#customer-notifications{display:none!important}
+#my-favorites{display:none!important}
