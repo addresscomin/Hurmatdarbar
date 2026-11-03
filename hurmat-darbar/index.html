@@ -30,6 +30,28 @@
   <div class="splash-delivery" aria-hidden="true">🛵</div><p class="splash-brand">HURMAT <b>DARBAR</b></p><small>URI GOOD FOOD · LOCAL FLAVOURS, WARM HOSPITALITY</small>
   <div class="splash-loader"><i></i></div>
 </div>
+<script>
+/* Splash must never block the storefront if module scripts or network requests fail. */
+(function(){
+  var finished=false;
+  function leaveSplash(){
+    if(finished)return;
+    finished=true;
+    var splash=document.getElementById("hd-splash");
+    if(!splash)return;
+    splash.classList.add("splash-out");
+    document.body.classList.remove("splash-active");
+    window.setTimeout(function(){splash.style.display="none";},750);
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",function(){window.setTimeout(leaveSplash,2200);},{once:true});
+  }else{
+    window.setTimeout(leaveSplash,2200);
+  }
+  window.addEventListener("load",function(){window.setTimeout(leaveSplash,900);},{once:true});
+  window.setTimeout(leaveSplash,6500);
+})();
+</script>
 <div class="permission-welcome" id="permission-welcome" hidden role="dialog" aria-modal="true" aria-labelledby="permission-title"><div class="permission-panel"><span class="permission-kicker">HURMAT DARBAR · URI</span><h2 id="permission-title">Stay updated<br><i>with every order.</i></h2><p>Get order updates and delivery notifications. Share your location to check whether we deliver to your area.</p><div class="permission-choice"><div><b>Order notifications</b><small id="notification-permission-status">Know when your order is confirmed, prepared and delivered.</small><button type="button" id="welcome-enable-notifications">Allow notifications</button></div><div><b>Delivery location</b><small id="location-permission-status">Use your location to check delivery availability at checkout.</small><button type="button" id="welcome-enable-location">Share my location</button></div></div><button class="permission-skip" type="button" id="permission-later">Continue to menu</button><small class="permission-footnote">You can continue without either permission. Your browser will ask only after you tap Allow.</small></div></div><main id="home">
   <section class="home-hero" id="home-hero">
   <div class="home-welcome"><div class="home-location"><span class="location-pin">⌖</span><div><small>DELIVERING TO</small><b>Uri, Jammu & Kashmir</b></div><button type="button" id="header-notifications-home" aria-label="Notifications">♧<b id="home-notification-dot"></b></button></div>
