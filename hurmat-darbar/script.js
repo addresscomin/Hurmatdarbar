@@ -505,6 +505,7 @@ function updateCustomerDashboard(guestReady){
   if(!document.querySelector("[data-customer-tab].active"))showCustomerTab("menu");
 }
 function showCustomerTab(tab){
+  if(tab==="cart"){toggleCart(true);document.querySelectorAll("[data-customer-tab]").forEach(b=>b.classList.toggle("active",b.dataset.customerTab==="cart"));return;}
   const menu=document.getElementById("menu"),services=document.getElementById("services"),account=document.getElementById("my-account"),orders=document.getElementById("my-orders"),visit=document.getElementById("visit"),notifications=document.getElementById("customer-notifications"),favorites=document.getElementById("my-favorites");
   const auth=document.getElementById("customer-auth-form"),profile=document.getElementById("customer-profile-card");
   if(auth)auth.hidden=true;
