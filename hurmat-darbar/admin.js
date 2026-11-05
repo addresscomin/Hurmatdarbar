@@ -363,7 +363,7 @@ async function refresh(){
     render();return;
   }
   const results=await Promise.allSettled([api("orders"),api("menu"),api("reservations"),api("riders"),
-    supabase.from("notifications").select("id,title,body,order_id,is_read,created_at").order("created_at",{ascending:false}).limit(60),
+    supabase.from("notifications").select("id,title,body,order_id,is_read,created_at,orders!notifications_order_id_fkey(order_type)").order("created_at",{ascending:false}).limit(60),
     supabase.from("restaurant_settings").select("*").eq("id",1).single(),
     role==="owner"?api("availability"):Promise.resolve({requests:[]}),
     ["owner","manager","delivery_manager"].includes(role)?api("cash_collections"):Promise.resolve({cash_collections:[]}),
@@ -381,7 +381,7 @@ async function refresh(){
   }
   if(results[2].status==="fulfilled")reservations=results[2].value.reservations||[];
   if(results[3].status==="fulfilled"){riders=results[3].value.riders||[];riderLocations=results[3].value.locations||[];}
-  if(results[4].status==="fulfilled"&&!results[4].value.error)notifications=results[4].value.data||[];
+  if(results[4].status==="fulfilled"&&!results[4].value.error)notifications=(results[4].value.data||[]).filter(n=>!n.order_id||n.orders?.order_type==="delivery");
   if(results[5].status==="fulfilled"&&!results[5].value.error)settings=results[5].value.data;
   if(results[6].status==="fulfilled"){availabilityRequests=results[6].value.requests||[];availabilityLoadError="";}
   else{availabilityLoadError=results[6].reason?.message||"Owner availability API is unavailable.";}
@@ -719,11 +719,11 @@ async function startApp(){
   },8000);
   if(channel)await supabase.removeChannel(channel);
   channel=supabase.channel("hurmat-admin-live")
-    .on("postgres_changes",{event:"INSERT",schema:"public",table:"orders"},payload=>{refresh();const o=payload.new||{};ownerBrowserNotify("New order received","Order #"+(o.order_no||"—")+" · "+money(o.total||0));})
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"orders"},payload=>{refresh();const o=payload.new||{};if(o.order_type==="delivery")ownerBrowserNotify("New order received","Order #"+(o.order_no||"—")+" · "+money(o.total||0));})
     .on("postgres_changes",{event:"UPDATE",schema:"public",table:"orders"},()=>refresh())
     .on("postgres_changes",{event:"*",schema:"public",table:"payment_submissions"},()=>refresh())
     .on("postgres_changes",{event:"*",schema:"public",table:"refund_requests"},()=>refresh())
-    .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},payload=>{refresh();const n=payload.new||{};toast("New restaurant notification.");ownerBrowserNotify(n.title||"Hurmat Darbar alert",n.body||"You have a new restaurant update.");})
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},async payload=>{const n=payload.new||{};if(n.order_id){const {data}=await supabase.from("orders").select("order_type").eq("id",n.order_id).maybeSingle();if(data?.order_type!=="delivery"){refresh();return;}}refresh();toast("New restaurant notification.");ownerBrowserNotify(n.title||"Hurmat Darbar alert",n.body||"You have a new restaurant update.");})
     .on("postgres_changes",{event:"*",schema:"public",table:"menu_items"},()=>refresh())
     .on("postgres_changes",{event:"*",schema:"public",table:"menu_variants"},()=>refresh())
     .on("postgres_changes",{event:"*",schema:"public",table:"reservations"},()=>refresh())
