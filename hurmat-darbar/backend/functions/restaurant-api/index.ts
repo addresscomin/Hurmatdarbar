@@ -210,6 +210,7 @@ Deno.serve(async (req: Request) => {
       if (roles.has("rider") && ![...roles].some((r) => ["owner", "manager", "kitchen", "delivery_manager"].includes(r))) {
         orderQuery = orderQuery.eq("rider_id", user.id);
       }
+      orderQuery = orderQuery.eq("order_type", "delivery");
       const { data, error } = await orderQuery.order("created_at", { ascending: false }).limit(100);
       if (error) return reply({ error: "orders_unavailable" }, 500);
       return reply({ orders: data ?? [] });
