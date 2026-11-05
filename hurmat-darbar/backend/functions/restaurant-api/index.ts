@@ -206,7 +206,7 @@ Deno.serve(async (req: Request) => {
       }
       if (![...roles].some((r) => ["owner", "manager", "kitchen", "delivery_manager", "rider"].includes(r))) return reply({ error: "forbidden" }, 403);
       let orderQuery = supabase.from("orders")
-        .select("id, order_no, customer_name, customer_phone, address_text, lat, lng, notes, payment_method, payment_status, status, subtotal, delivery_fee, total, rider_id, created_at, updated_at, order_items(id, item_name, variant_label, unit_price, qty, line_total)");
+        .select("id, order_no, customer_name, customer_phone, address_text, lat, lng, notes, payment_method, payment_status, status, subtotal, delivery_fee, total, rider_id, created_at, updated_at, order_type, table_number, guest_count, order_items(id, item_name, variant_label, unit_price, qty, line_total), dine_in_cash_receipts(receipt_no,amount,collected_at)");
       if (roles.has("rider") && ![...roles].some((r) => ["owner", "manager", "kitchen", "delivery_manager"].includes(r))) {
         orderQuery = orderQuery.eq("rider_id", user.id);
       }
@@ -534,6 +534,14 @@ Deno.serve(async (req: Request) => {
         });
         if (error) return reply({ error: "status_update_failed", code: error.message }, 400);
         return reply({ ok: true });
+      }
+
+      case "collect_dine_in_cash": {
+        if (![...roles].some((r) => ["owner", "manager"].includes(r))) return reply({ error: "forbidden" }, 403);
+        if (!isUuid(body.order_id)) return reply({ error: "invalid_order_id" }, 400);
+        const { data, error } = await supabase.rpc("collect_dine_in_cash", { p_order: body.order_id });
+        if (error) return reply({ error: error.message || "cash_collection_failed" }, 400);
+        return reply(data ?? { ok: true });
       }
 
       case "mark_cash_handed_over": {
