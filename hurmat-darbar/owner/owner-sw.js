@@ -1,5 +1,5 @@
-const CACHE="hurmat-owner-shell-v5";
-const CORE=["./index.html","../admin.js?v=owner-order-approval-20261103-1","../assets/hurmat-owner-app-icon.svg","./manifest.webmanifest"];
+const CACHE="hurmat-owner-shell-v6";
+const CORE=["./index.html","../admin.js?v=owner-delivery-only-notifications-20261105-1","../assets/hurmat-owner-app-icon.svg","./manifest.webmanifest"];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)));self.skipWaiting()});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim()});
 self.addEventListener("push",event=>{let payload={title:"Hurmat Darbar alert",body:"A new restaurant update is available.",url:"./?tab=notifications"};try{if(event.data)payload={...payload,...event.data.json()}}catch{}event.waitUntil(self.registration.showNotification(payload.title,{body:payload.body,icon:"../assets/hurmat-owner-app-icon.svg",badge:"../assets/hurmat-owner-app-icon.svg",data:{url:payload.url||"./?tab=notifications"},tag:payload.tag||"hurmat-owner-alert",renotify:false}));});
