@@ -114,6 +114,15 @@ function empty(text){return '<div class="empty">'+esc(text)+'</div>';}
 function nextStatus(s){
   return ({pending_confirmation:"confirmed",confirmed:"preparing",preparing:"ready_for_pickup"})[s]||null;
 }
+function printDineInReceipt(o){
+  const receipt=Array.isArray(o.dine_in_cash_receipts)?o.dine_in_cash_receipts[0]:o.dine_in_cash_receipts;
+  if(!receipt){toast("Receipt record is unavailable.",true);return;}
+  const win=window.open("","_blank");
+  if(!win){toast("Allow pop-ups to print the receipt.",true);return;}
+  const lines=(o.order_items||[]).map(i=>'<tr><td>'+esc(i.item_name)+'<br><small>'+esc(i.variant_label)+'</small></td><td>'+esc(i.qty)+'</td><td>₹'+money(i.line_total)+'</td></tr>').join("");
+  win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(receipt.receipt_no)+'</title><style>body{font:14px Arial,sans-serif;color:#111;padding:24px;max-width:420px;margin:auto}h1{text-align:center;font-size:22px}p{text-align:center;margin:5px}table{width:100%;border-collapse:collapse;margin:20px 0}td{padding:9px 3px;border-bottom:1px solid #ddd}td:last-child{text-align:right}th{text-align:left;border-bottom:2px solid #222;padding:8px 3px}.total{font-size:20px;font-weight:bold;text-align:right;border-top:2px solid #222;padding-top:12px}.muted{color:#555;font-size:12px;text-align:center}@media print{button{display:none}}</style></head><body><h1>HURMAT DARBAR</h1><p>Cash Payment Receipt</p><p class="muted">'+esc(receipt.receipt_no)+'</p><hr><p>Order #'+esc(o.order_no)+' · Table '+esc(o.table_number)+' · Guests '+esc(o.guest_count)+'</p><p>'+esc(o.customer_name)+' · '+esc(o.customer_phone)+'</p><table><thead><tr><th>Item</th><th>Qty</th><th>Amount</th></tr></thead><tbody>'+lines+'</tbody></table><div class="total">TOTAL PAID: ₹'+money(receipt.amount)+'</div><p class="muted">Paid by Cash · '+new Date(receipt.collected_at).toLocaleString("en-IN")+'</p><p class="muted">Thank you for visiting Hurmat Darbar.</p><script>window.onload=()=>window.print()<\/script></body></html>');
+  win.document.close();
+}
 function orderCard(o){
   const items=(o.order_items||[]).map(i=>esc(i.qty)+" × "+esc(i.item_name)+" ("+esc(i.variant_label)+")").join("<br>");
   const next=nextStatus(o.status);
@@ -123,6 +132,8 @@ function orderCard(o){
     '<p class="mute" style="margin:8px 0">'+esc(o.customer_name)+' · '+esc(o.customer_phone)+'</p><p class="mute">'+esc(o.address_text)+'</p><p style="margin:10px 0;line-height:1.7">'+(items||"No item details")+'</p>'+
     '<div class="row"><span class="mute">'+new Date(o.created_at).toLocaleString()+'</span><b class="price">'+money(o.total)+'</b></div>'+
     '<p class="mute" style="margin-top:7px">Payment: '+esc(o.payment_method)+' · '+esc(o.payment_status)+'</p>'+
+    (o.order_type==="dine_in"&&o.payment_method==="cash"&&o.payment_status!=="paid"?'<div class="actions"><button class="btn sm" data-collect-dine-in-cash="'+esc(o.id)+'">Collect cash · '+money(o.total)+' & issue receipt</button></div>':"")+
+    (o.order_type==="dine_in"&&o.payment_status==="paid"&&o.dine_in_cash_receipts?'<div class="actions"><button class="btn sm ghost" data-print-dine-in-receipt="'+esc(o.id)+'">Print receipt · '+esc((Array.isArray(o.dine_in_cash_receipts)?o.dine_in_cash_receipts[0]:o.dine_in_cash_receipts).receipt_no||"")+'</button></div>':"")+
     (canAdvance?'<div class="actions"><button class="btn sm" data-order="'+esc(o.id)+'" data-status="'+next+'">Mark '+esc(statusNames[next])+'</button><button class="btn sm ghost" data-cancel="'+esc(o.id)+'">Cancel / reject</button></div>':'')+
     (next==="delivered"?'<p class="mute">Delivery completion is locked. The rider must verify the customer delivery code in the Rider App.</p>':"")+    (next==="confirmed"&&o.payment_method==="upi_manual"&&o.payment_status!=="paid"?'<p class="mute">Awaiting UPI payment verification. Review it in Payments before confirming this order.</p>':"")+
     (o.status==="ready_for_pickup"&&riderOptions?'<div class="actions"><select id="rider-'+esc(o.id)+'"><option value="">Choose rider</option>'+riderOptions+'</select><button class="btn sm ghost" data-assign="'+esc(o.id)+'">Assign rider</button></div>':'')+
@@ -460,6 +471,21 @@ function bindActions(){
   document.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=async()=>{
     const reason=prompt("Enter a reason for cancelling or rejecting this order:");if(!reason||!reason.trim())return;
     try{await api("",{action:"update_order_status",order_id:b.dataset.cancel,status:"cancelled",reason:reason.trim()});await refresh();toast("Order cancelled.");}catch(e){toast(e.message,true);}
+  });
+  document.querySelectorAll("[data-collect-dine-in-cash]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Confirm that ₹"+(orders.find(o=>o.id===b.dataset.collectDineInCash)?.total||0)+" cash has been received at the restaurant counter?"))return;
+    b.disabled=true;
+    try{
+      await api("",{action:"collect_dine_in_cash",order_id:b.dataset.collectDineInCash});
+      await refresh();
+      const order=orders.find(o=>o.id===b.dataset.collectDineInCash);
+      if(order)printDineInReceipt(order);
+      toast("Cash payment recorded and receipt issued.");
+    }catch(e){toast(e.message||"Cash collection failed.",true);b.disabled=false;}
+  });
+  document.querySelectorAll("[data-print-dine-in-receipt]").forEach(b=>b.onclick=()=>{
+    const order=orders.find(o=>o.id===b.dataset.printDineInReceipt);
+    if(order)printDineInReceipt(order);
   });
   document.querySelectorAll("[data-cash-handover]").forEach(b=>b.onclick=async()=>{
     if(!confirm("Confirm that cash for this order has been received from the rider?"))return;
